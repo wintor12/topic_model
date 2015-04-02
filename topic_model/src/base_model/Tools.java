@@ -1,48 +1,9 @@
 package base_model;
 
-
-import java.io.File;
-import java.util.Arrays;
 import java.util.Comparator;
-import java.util.LinkedList;
-import java.util.List;
+
 
 public class Tools {
-	/*
-	 * list files in a folder
-	 */	
-	public static List<String> listDir(String folder)
-	{
-		File f = new File(folder);
-		String fe[] = f.list();
-		if(fe == null)
-		{
-			System.out.println("No such directory!!");
-			return null;
-		}
-		List<String> files = new LinkedList<String>(Arrays.asList(fe));
-		for(int i = 0; i < files.size(); i++)
-		{
-			if(files.get(i).equals(".DS_Store")||files.get(i).equals(".DS_S.txt")||
-					new File(folder + files.get(i)).isDirectory())
-				files.remove(i);
-		}
-		return files;
-	}
-	
-	/*
-	 * taylor approximation of first derivative of the log gamma function
-	 *
-	 */
-	public static double digamma(double x)
-	{
-	    double p;
-	    x=x+6;
-	    p=1/(x*x);
-	    p=(((0.004166666666667*p-0.003968253986254)*p+0.008333333333333)*p-0.083333333333333)*p;
-	    p=p+Math.log(x)-0.5/x-1/(x-1)-1/(x-2)-1/(x-3)-1/(x-4)-1/(x-5)-1/(x-6);
-	    return p;
-	}
 	
 	/*
 	 * given log(a) and log(b), return log(a + b)

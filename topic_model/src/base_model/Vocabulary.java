@@ -30,12 +30,14 @@ public class Vocabulary {
 	
 	public void getVocabulary(String path, int min_count)
 	{
-		List<String> dir = Tools.listDir(path);
-    	for(String d : dir)
+		List<File> dir = process.Preprocess.listDir(path);
+		
+		//Calculate words counts
+    	for(File d : dir)
     	{
     		String text = "";
     		try {
-    			text = FileUtils.readFileToString(new File(path + d));
+    			text = FileUtils.readFileToString(d);
     		} catch (IOException e) {
     			e.printStackTrace();
     		}
@@ -52,9 +54,10 @@ public class Vocabulary {
     				wordCount.put(word, 1);	
     			}
     		}
-
     	}
-    	//Need to create a copy of map, otherwise concurrent exception
+    	    	
+    	//Remove word counts pair which counts less than min_count, then create id word map
+    	//Need to create a copy of map, otherwise concurrent exception    	    	
     	Map<String, Integer> temp_wordCount = new TreeMap<String, Integer>(wordCount);
     	int id = 0;
     	for (Map.Entry<String, Integer> entry : temp_wordCount.entrySet())
@@ -72,7 +75,7 @@ public class Vocabulary {
     			id++;
     		}
 		}
-    	printToFile(path + "..\\idAndWord");
+    	printToFile(new File(path, "idAndWord").getName());
 	}
 
 	
