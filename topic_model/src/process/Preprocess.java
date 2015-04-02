@@ -5,10 +5,14 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
+import java.util.TreeMap;
 
 import org.apache.commons.io.FileUtils;
 
@@ -30,11 +34,14 @@ import edu.stanford.nlp.util.CoreMap;
 
 public class Preprocess {
 	
-	public String path_documents; //The original data set folder
-	public String path;  //The original data set folder
-	public String path_words;
-	public String path_trees;
-	public List<String> stopwords;
+	String path_documents; //The original data set folder
+	String path;  //The original data set folder
+	String path_words;  //the bag of words document, each word split by " "
+	String path_trees;  //the dependency tree of a document, each wordNode split by \t
+	String path_edges;  //the edges of a tree document, has format term:[term1, term2]
+	String path_train;
+	String path_test;
+	List<String> stopwords;
 	
 	public Preprocess(String run_path, String data_path, String stopwords_path)
 	{
@@ -42,6 +49,9 @@ public class Preprocess {
 		this.path = run_path;
 		this.path_words = new File(run_path, "data_words").getAbsolutePath();
 		this.path_trees = new File(run_path, "data_trees").getAbsolutePath();
+		this.path_edges = new File(run_path, "data_edges").getAbsolutePath();
+		this.path_train = new File(run_path, "training").getAbsolutePath();
+		this.path_test = new File(run_path, "testing").getAbsolutePath();
 		String text = "";
 		try {
 			text = FileUtils.readFileToString(new File(stopwords_path));
@@ -52,7 +62,10 @@ public class Preprocess {
 		stopwords = Arrays.asList(words);
 	}
 	
-	// Generate bag of words documents
+	/**
+	 * Generate bag of words documents from "path_documents" 
+	 * Output to path_words
+	 */
 	public void getWords() {
 		Properties props = new Properties();
 		props.put("annotators", "tokenize, ssplit");
@@ -88,9 +101,10 @@ public class Preprocess {
 		}
 	}
 	
-	// Generate bag of words documents and dependency trees documents from
-	// "path_documents"
-	// Output to path_words and path_trees
+	/**
+	 * Generate bag of words documents and dependency trees documents from "path_documents" 
+	 * Output to path_words and path_trees
+	 */
 	public void getWordsAndTrees() {
 		LexicalizedParser lp = LexicalizedParser.loadModel(
 				"edu/stanford/nlp/models/lexparser/englishPCFG.ser.gz",
@@ -152,6 +166,111 @@ public class Preprocess {
 				e.printStackTrace();
 			}
 		}
+	}
+	
+	/**
+	 * @param wordNode  has the format eg, (CALL-5, Robert-2) from dependency tree parsing
+	 * @return  parent word, This example is "Call"
+	 */
+	public String extractParent(String wordNode)
+	{
+		return wordNode.substring(1, wordNode.indexOf('-'));
+	}
+	
+	/**
+	 * return the word "Robert" of a wordNode  eg, (CALL-5, Robert-2) from dependency tree parsing
+	 * @param wordNode
+	 * @return 
+	 */
+	public String extractWord(String wordNode)
+	{
+		return wordNode.substring(wordNode.indexOf(',') + 2, wordNode.indexOf('-', wordNode.indexOf(',')));
+	}
+	
+	/**
+	 * Find edges of each tree document in path_trees folder, and output in path_edge folder
+	 */
+	public void findEdges()
+	{
+		for(File file: listDir(path_trees))
+		{
+			Map<String, List<String>> map = new TreeMap<String, List<String>>();
+			findEdgesFromTreeDoc(file, map);
+		}
+		
+	}
+	
+	/** 
+	 * this method can process one tree document in data_tree and output tree edges document in data_edges
+	 * @param file   has to be dependency tree file in data_tree
+	 * @param map    a map that key is a word in the corpus, value is a List contains all words has distance 1 with this word
+	 */
+	public void findEdgesFromTreeDoc(File file, Map<String, List<String>> map)
+	{
+		String name = file.getName();
+		String worddict = "";
+		try {
+			worddict = FileUtils.readFileToString(new File(path_words, name));
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		Set<String> dict = new HashSet<String>();   //word dictionary of current document
+		for(String w: worddict.split(" "))
+		{
+			dict.add(w);
+		}
+		String text = "";
+		try {
+			text = FileUtils.readFileToString(new File(path_trees, name));
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		StringBuilder sb = new StringBuilder();
+		String[] sentences = text.split("\\r?\\n");
+		for(String sent: sentences)
+		{
+			String[] wordNodes = sent.split("\t");
+			for(String wordNode: wordNodes)
+			{
+				String word = extractWord(wordNode).toLowerCase();
+				String parent = extractParent(wordNode).toLowerCase();
+				//If words are not in dict, remove it
+				if(parent.equals("ROOT") || !dict.contains(parent) || !dict.contains(word))
+					continue;
+				if(!map.containsKey(word))
+					map.put(word, new ArrayList<String>());
+				if(!map.containsKey(parent))
+					map.put(parent, new ArrayList<String>());
+				if(!map.get(parent).contains(word))
+					map.get(parent).add(word);
+				if(!map.get(word).contains(parent))
+					map.get(word).add(parent);			
+			}
+		}
+		for (Map.Entry<String, List<String>> entry : map.entrySet())
+		{
+			String term = entry.getKey();
+			List<String> adj_term = entry.getValue();
+			sb.append(term + ":" + adj_term.toString());
+			sb.append(System.getProperty("line.separator"));
+		}
+		try {
+			FileUtils.writeStringToFile(new File(path_edges, name), sb.toString());
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public void selectTrainingAndTestingData(double percentage)
+	{
+		File train = new File(this.path_train);
+		File test = new File(this.path_test);
+		List<File> files = listDir(this.path_documents);
+		int num_train = (int) Math.round(files.size()*percentage);
+		int num_test = files.size() - num_train;
+		StringBuilder sb = new StringBuilder();
+		sb.append("");
 	}
 	
 	/*

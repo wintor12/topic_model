@@ -1,11 +1,5 @@
 package process;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.List;
-
-import org.apache.commons.io.FileUtils;
-
 public class Test {
 	
 	//The LDA output running folder. All folders and files created here during running topic model 
@@ -18,7 +12,10 @@ public class Test {
 	public static void main(String[] args) {
 		
 		Preprocess p = new Preprocess(folder_path, data_path, stopwords_path);
-		p.getWordsAndTrees();
+//		p.getWords();
+//		p.getWordsAndTrees();
+//		p.findEdges();
+		System.out.println("Hello World");
 
 	}
 
