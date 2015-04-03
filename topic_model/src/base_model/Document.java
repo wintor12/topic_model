@@ -9,8 +9,7 @@ import java.util.TreeMap;
 import org.apache.commons.io.FileUtils;
 
 public class Document {	
-	String text;  //the content of the document, contains words from Python tokenizer.
-	String path;
+	String path;  //the running path
 	String[] words;
     int[] counts;
     int[] ids;
@@ -30,17 +29,22 @@ public class Document {
     	this.path = path;
     	this.doc_name = doc_name;
     	wordCount = new TreeMap<Integer, Integer>();
+    	
+    }
+    
+    /**
+     * format to  word: count and initialize each doc object, set word count map, set words, ids, counts array
+     * @param voc
+     */
+    public void formatDocument(Vocabulary voc) 
+    {
+    	String text = "";
     	try {
-			this.text = FileUtils.readFileToString(new File(path + "data_words\\" + doc_name));
+    		String data_words = new File(path, "data_words").getAbsolutePath();
+			text = FileUtils.readFileToString(new File(data_words, doc_name));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-    }
-    
-    //format to  word: count and initialize each doc object
-    //set word count map, set words, ids, counts array
-    public void formatDocument(Vocabulary voc) 
-    {
     	String[] ws = text.split(" ");
     	for(String word: ws)  //put word count pair to map
     	{
@@ -62,8 +66,7 @@ public class Document {
     	ids = new int[wordCount.size()];
     	int i = 0;
     	for (Map.Entry<Integer, Integer> entry : wordCount.entrySet())
-		{
-    		
+		{    		
 			int id = entry.getKey();
 			int count = entry.getValue();
 			words[i] = voc.idToWord.get(id);

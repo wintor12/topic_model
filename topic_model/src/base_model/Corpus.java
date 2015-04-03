@@ -1,7 +1,10 @@
 package base_model;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
+
+import org.apache.commons.io.FileUtils;
 
 import process.Preprocess;
 
@@ -13,47 +16,74 @@ public class Corpus {
     int num_docs;
     int num_docs_test;
     Vocabulary voc;
+    String path;
     
     //The files in this path are already tokenized and removed stop words in Python
-    public Corpus(String path, int min_count)
-    {    	
+    /**
+     * create corpus. Before doing this, we already preprocess documents into data_words, data_trees, data_edges folder.
+     * @param path             running folder, the parent folder of everything
+     * @param min_count        any word which counts less than min_count will be removed
+     * @param percentage       the percentage of training data
+     */
+    public Corpus(String path, int min_count, double percentage)
+    {
+    	StringBuilder sb = new StringBuilder();
+    	this.path = path;
     	// Iterate all files and get vocabulary, word id maps.
     	voc = new Vocabulary();
-    	voc.getVocabulary(new File(path, "data_words").getAbsolutePath(), min_count);
+    	voc.getVocabulary(path, min_count);
     	num_terms = voc.size();
     	System.out.println("number of terms   :" + num_terms);
-    	List<String> train = Preprocess.listDir(path + "train\\");
-    	num_docs = train.size();
+    	sb.append("number of terms   :" + num_terms);
+    	sb.append(System.getProperty("line.separator"));
+    	
+    	List<File> files = Preprocess.listDir(new File(path, "data_words").getAbsolutePath());
+    	int num = files.size();
+    	System.out.println("number of docs   :" + num);
+    	sb.append("number of docs   :" + num);
+    	sb.append(System.getProperty("line.separator"));
+    	num_docs = (int) Math.round(files.size()*percentage);
     	System.out.println("number of training docs    :" + num_docs);
+    	sb.append("number of training docs    :" + num_docs);
+    	sb.append(System.getProperty("line.separator"));
+    	
     	docs = new Document[num_docs];
     	int i = 0;
     	System.out.println("=======process training set========");
-		for(String d : train)
+		while(i < num_docs)
 		{
 			if(i%10 == 0)
 				System.out.println("Loading document " + i);
-			Document doc = new Document(path, d);
+			Document doc = new Document(path, files.get(i).getName());
 			doc.formatDocument(voc); //format document to word: count, and set words, counts, ids array
 //			System.out.println("Document " + d + " contain unique words : " + doc.length);
 			docs[i] = doc;
 			i++;
 		}
 		
-		List<String> test = Tools.listDir(path + "test\\");
-		num_docs_test = test.size();
+		num_docs_test = num - num_docs;
 		System.out.println("number of test docs    :" + num_docs_test);
+		sb.append("number of testing docs    :" + num_docs_test);
+    	sb.append(System.getProperty("line.separator"));
     	docs_test = new Document[num_docs_test];
-		System.out.println("=======process test set========");	
-		i = 0;
-		for(String d : test)
+		System.out.println("=======process test set========");
+		int j = 0;
+		while(j < num_docs_test)
 		{
-			if(i%10 == 0)
-				System.out.println("Loading document " + i);
-			Document doc = new Document(path, d);
+			if(j%10 == 0)
+				System.out.println("Loading document " + j);
+			Document doc = new Document(path, files.get(i).getName());
 			doc.formatDocument(voc); //format document to word: count, and set words, counts, ids array
 //			System.out.println("Document " + d + " contain unique words : " + doc.length);
-			docs_test[i] = doc;
+			docs_test[j] = doc;
+			j++;
 			i++;
+		}
+		
+		try {
+			FileUtils.writeStringToFile(new File(path, "corpus_info"), sb.toString());
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
     }
     
@@ -61,7 +91,10 @@ public class Corpus {
     {
     	int max = 0;
     	for(int i = 0; i < docs.length; i++)
+    	{
+//    		System.out.println(docs[i].doc_name);
     		max = max > docs[i].length?max:docs[i].length;
+    	}
     	return max;
     }
 

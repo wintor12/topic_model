@@ -34,6 +34,17 @@ import edu.stanford.nlp.util.CoreMap;
 
 public class Preprocess {
 	
+	/**
+	 * Before we run any LDA programs, we need to pre-process documents first.
+	 * The constructor only takes run path(running directory), data path(original documents in a single folder)
+	 * and stop words path. Then it will automatically create data_words(bag of words document), data_tree(dependency tree)
+	 * and data_edge(edges for each node) during the process of 2, 3.
+	 * The order to run preprocess is: 
+	 * 1 constructor
+	 * 2 getWords/getwordsandTrees
+	 * 3 findEdges
+	 */
+	
 	String path_documents; //The original data set folder
 	String path;  //The original data set folder
 	String path_words;  //the bag of words document, each word split by " "
@@ -268,9 +279,25 @@ public class Preprocess {
 		File test = new File(this.path_test);
 		List<File> files = listDir(this.path_documents);
 		int num_train = (int) Math.round(files.size()*percentage);
-		int num_test = files.size() - num_train;
 		StringBuilder sb = new StringBuilder();
-		sb.append("");
+		StringBuilder sb2 = new StringBuilder();
+		int i = 0;
+		for(i = 0; i < num_train; i++)
+		{			
+			sb.append(files.get(i).getName());
+			sb.append(System.getProperty("line.separator"));
+		}
+		for(i = num_train; i < files.size(); i++)
+		{			
+			sb2.append(files.get(i).getName());
+			sb2.append(System.getProperty("line.separator"));
+		}
+		try {
+			FileUtils.writeStringToFile(train, sb.toString());
+			FileUtils.writeStringToFile(test, sb2.toString());
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	/*

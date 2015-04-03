@@ -48,7 +48,7 @@ public class Model {
 			this.alpha = opt_alpha(ss.alpha_suffstas, ss.num_docs, this.num_topics);
 	}
 	
-	/*
+	/**
 	 * newtons method
 	 * @D ss.num_topics
 	 * @K topics
@@ -81,10 +81,14 @@ public class Model {
 	    return(Math.exp(log_a));
 	}
 	
-	public void save_lda_model(String path, String filename)
+	/**
+	 * save current beta and other parameters
+	 * @param path         The folder where beta saved
+	 * @param filename     The name of beta(usually like "init" or the number of iteration)
+	 */
+	public void save_lda_model(String filename)
 	{
 		DecimalFormat df = new DecimalFormat("#.##");
-		String name = path + filename + "_beta";
 		StringBuilder sb = new StringBuilder();
 		int k, w;
 		for (k = 0; k < num_topics; k++)
@@ -96,18 +100,20 @@ public class Model {
 	        sb.append(System.getProperty("line.separator"));
         }
 		try {
-			FileUtils.writeStringToFile(new File(name), sb.toString());
+			FileUtils.writeStringToFile(new File(filename + "_beta"), sb.toString());
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 		
-		String name2 = path + filename + "_other";
 		StringBuilder sb2 = new StringBuilder();
-		sb2.append("num_topics: " + this.num_topics + "\n");
-		sb2.append("num_terms: " + this.num_terms + "\n");
-		sb2.append("alpha: " + df.format(this.alpha) + "\n");
+		sb2.append("num_topics: " + this.num_topics);
+		sb2.append(System.getProperty("line.separator"));
+		sb2.append("num_terms: " + this.num_terms);
+		sb2.append(System.getProperty("line.separator"));
+		sb2.append("alpha: " + df.format(this.alpha));
+		sb2.append(System.getProperty("line.separator"));
 		try {
-			FileUtils.writeStringToFile(new File(name2), sb2.toString());
+			FileUtils.writeStringToFile(new File(filename + "_other"), sb2.toString());
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

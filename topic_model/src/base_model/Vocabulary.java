@@ -28,9 +28,14 @@ public class Vocabulary {
 		return wordCount.size();
 	}
 	
+	/**
+	 * This method return the vocabulary of the whole corpus
+	 * @param path         the bag of words document path, in data_words folder 
+	 * @param min_count    remove any word which counts less than min_count
+	 */
 	public void getVocabulary(String path, int min_count)
 	{
-		List<File> dir = process.Preprocess.listDir(path);
+		List<File> dir = process.Preprocess.listDir(new File(path, "data_words").getAbsolutePath());
 		
 		//Calculate words counts
     	for(File d : dir)
