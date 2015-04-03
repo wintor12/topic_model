@@ -80,7 +80,7 @@ public class Vocabulary {
     			id++;
     		}
 		}
-    	printToFile(new File(path, "idAndWord").getName());
+    	printToFile(new File(path, "idAndWord").getAbsolutePath());
 	}
 
 	

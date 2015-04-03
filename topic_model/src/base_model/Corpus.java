@@ -10,13 +10,13 @@ import process.Preprocess;
 
 
 public class Corpus {
-	Document[] docs;
-	Document[] docs_test;
-	int num_terms;
-    int num_docs;
-    int num_docs_test;
-    Vocabulary voc;
-    String path;
+	public Document[] docs;
+	public Document[] docs_test;
+	public int num_terms;
+    public int num_docs;
+    public int num_docs_test;
+    public Vocabulary voc;
+    public String path;
     
     //The files in this path are already tokenized and removed stop words in Python
     /**
@@ -24,8 +24,9 @@ public class Corpus {
      * @param path             running folder, the parent folder of everything
      * @param min_count        any word which counts less than min_count will be removed
      * @param percentage       the percentage of training data
+     * @param type             "LDA", "GTRF", "MGTRF"
      */
-    public Corpus(String path, int min_count, double percentage)
+    public Corpus(String path, int min_count, double percentage, String type)
     {
     	StringBuilder sb = new StringBuilder();
     	this.path = path;
@@ -54,9 +55,18 @@ public class Corpus {
 		{
 			if(i%10 == 0)
 				System.out.println("Loading document " + i);
-			Document doc = new Document(path, files.get(i).getName());
-			doc.formatDocument(voc); //format document to word: count, and set words, counts, ids array
+			Document doc = new Document(path, files.get(i).getName(), voc);
+			doc.formatDocument(); //format document to word: count, and set words, counts, ids array
 //			System.out.println("Document " + d + " contain unique words : " + doc.length);
+			if(type.equals("GTRF"))
+			{
+				doc.getEdges2();
+			}
+			if(type.equals("MGTRF"))
+			{
+				doc.getEdges2();
+				doc.getEdges3();
+			}
 			docs[i] = doc;
 			i++;
 		}
@@ -72,8 +82,8 @@ public class Corpus {
 		{
 			if(j%10 == 0)
 				System.out.println("Loading document " + j);
-			Document doc = new Document(path, files.get(i).getName());
-			doc.formatDocument(voc); //format document to word: count, and set words, counts, ids array
+			Document doc = new Document(path, files.get(i).getName(), voc);
+			doc.formatDocument(); //format document to word: count, and set words, counts, ids array
 //			System.out.println("Document " + d + " contain unique words : " + doc.length);
 			docs_test[j] = doc;
 			j++;

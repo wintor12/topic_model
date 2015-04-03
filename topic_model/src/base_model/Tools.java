@@ -9,7 +9,7 @@ public class Tools {
 	 * given log(a) and log(b), return log(a + b)
 	 *
 	 */
-	static double log_sum(double log_a, double log_b) {
+	public static double log_sum(double log_a, double log_b) {
 		double v;
 
 		if (log_a < log_b) {

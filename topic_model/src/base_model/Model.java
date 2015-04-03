@@ -10,12 +10,12 @@ import org.apache.commons.math3.special.Gamma;
 
 public class Model {
 	
-	double[][] log_prob_w; //log beta
-	double alpha;
-	int num_topics;
+	public double[][] log_prob_w; //log beta
+	public double alpha;
+	public int num_topics;
 	int num_terms;
-	static double NEWTON_THRESH = 1e-5;
-	static int MAX_ALPHA_ITER = 1000;
+	public static double NEWTON_THRESH = 1e-5;
+	public static int MAX_ALPHA_ITER = 1000;
 	
 	public Model(int num_topics, int num_terms, double alpha)
 	{

@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.Arrays;
 
+
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.math3.special.Gamma;
 
@@ -12,14 +13,14 @@ import base_model.Tools.ArrayIndexComparator;
 
 public class EM {
 
-	int num_topics; // topic numbers
-	int VAR_MAX_ITER;
-	double VAR_CONVERGED;
-	int EM_MAX_ITER;
-	double EM_CONVERGED;
-	double alpha;
-	String path = "";
-	Corpus corpus;
+	public int num_topics; // topic numbers
+	public int VAR_MAX_ITER;
+	public double VAR_CONVERGED;
+	public int EM_MAX_ITER;
+	public double EM_CONVERGED;
+	public double alpha;
+	public String path = ""; //running path
+	public Corpus corpus;
 
 	public EM(String path, int num_topics, Corpus corpus) {
 		this.path = path;
@@ -159,9 +160,9 @@ public class EM {
 	    return likelihood;
 	}
 	
-	public void run_em()
-	{
-		String path_res = new File(path, "res_" + num_topics).getAbsolutePath();
+	public void run_em(String path_res_name, String type)
+	{ 
+		String path_res = new File(path, path_res_name).getAbsolutePath();
 		String path_model = new File(path_res, "model").getAbsolutePath();
 		
 		Model model = new Model(num_topics, corpus.num_terms, alpha);
@@ -212,7 +213,10 @@ public class EM {
 	        sb.append(likelihood +"\t" + converged + "\n");
 	        model.save_lda_model(new File(path_model, i + "").getAbsolutePath());
 	        save_gamma(model, new File(path_model, i + "_gamma"));
-	        
+	        if(type.equals("GTRF"))
+	        	save_doc_para(new File(path_model, i + "_doc"));
+	        if(type.equals("MGTRF"))
+				save_doc_para2(new File(path_model, i + "_doc"));
 		}		
 		File likelihood_file = new File(path_res, "likelihood");
 		try {
@@ -224,6 +228,10 @@ public class EM {
 		//output the final model
 		model.save_lda_model(new File(path_res, "final").getAbsolutePath());
 		save_gamma(model, new File(path_res, "final_gamma"));
+		if(type.equals("GTRF"))
+			save_doc_para(new File(path_res, "final_doc"));
+		if(type.equals("MGTRF"))
+			save_doc_para2(new File(path_res, "final_doc"));
 		
 		// output the word assignments (for visualization) and top words for each document
 		
@@ -301,7 +309,11 @@ public class EM {
 			Integer[] indexes = comparator.createIndexArray();
 			Arrays.sort(indexes, comparator);
 			for(int i = 0; i < M; i++)
+			{
+				if(i == doc.ids.length)
+					break;
 				res[i][k] = corpus.voc.idToWord.get(doc.ids[indexes[i]]);
+			}
 		}
 		StringBuilder sb = new StringBuilder();
 		for(int i = 0; i < M; i++)
@@ -314,6 +326,71 @@ public class EM {
 			
 		}
 		try {
+			FileUtils.writeStringToFile(file, sb.toString());
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	/**
+	 * This method save parameters in GTRF model.
+	 * @param corpus
+	 * @param filename
+	 */
+	public void save_doc_para(File file)
+	{
+		DecimalFormat df = new DecimalFormat("#.##");
+		StringBuilder sb = new StringBuilder();  //Save parameters in each document for each EM iteration
+		sb.append("doc_name");    		
+		sb.append("\t" + "zeta1");
+		sb.append("\t" + "zeta2");
+		sb.append("\t" + "num_e");
+		sb.append("\t" + "exp_ec");
+		sb.append("\t" + "exp_theta_square");
+		sb.append("\n");
+        for(int d = 0; d < corpus.num_docs; d++)
+        {
+        	sb.append(corpus.docs[d].doc_name);    		
+    		sb.append("\t" + df.format(corpus.docs[d].zeta1));
+    		sb.append("\t" + df.format(corpus.docs[d].zeta2));
+    		sb.append("\t" + df.format(corpus.docs[d].num_e));
+    		sb.append("\t" + df.format(corpus.docs[d].exp_ec));
+    		sb.append("\t" + df.format(corpus.docs[d].exp_theta_square));
+        	sb.append("\n");
+        }
+        try {
+			FileUtils.writeStringToFile(file, sb.toString());
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public void save_doc_para2(File file)
+	{
+		DecimalFormat df = new DecimalFormat("#.##");
+		StringBuilder sb = new StringBuilder();  //Save parameters in each document for each EM iteration
+		sb.append("doc_name");    		
+		sb.append("\t" + "zeta1");
+		sb.append("\t" + "zeta2");
+		sb.append("\t" + "num_e");
+		sb.append("\t" + "exp_ec");
+		sb.append("\t" + "num_e2");
+		sb.append("\t" + "exp_ec2");
+		sb.append("\t" + "exp_theta_square");
+		sb.append("\n");
+        for(int d = 0; d < corpus.num_docs; d++)
+        {
+        	sb.append(corpus.docs[d].doc_name);    		
+    		sb.append("\t" + df.format(corpus.docs[d].zeta1));
+    		sb.append("\t" + df.format(corpus.docs[d].zeta2));
+    		sb.append("\t" + df.format(corpus.docs[d].num_e));
+    		sb.append("\t" + df.format(corpus.docs[d].exp_ec));
+    		sb.append("\t" + df.format(corpus.docs[d].num_e2));
+    		sb.append("\t" + df.format(corpus.docs[d].exp_ec2));
+    		sb.append("\t" + df.format(corpus.docs[d].exp_theta_square));
+        	sb.append("\n");
+        }
+        try {
 			FileUtils.writeStringToFile(file, sb.toString());
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -359,7 +436,9 @@ public class EM {
 		System.out.println(perplex);
 		sb.append("Perplexity: " + perplex);
 		try {
-			FileUtils.writeStringToFile(new File(path + "res_" + num_topics + "/eval"), sb.toString());
+			String path_res = new File(path, "res_" + num_topics).getAbsolutePath();
+			File eval = new File(path_res, "eval"); 
+			FileUtils.writeStringToFile(eval, sb.toString());
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
