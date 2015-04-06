@@ -110,8 +110,7 @@ public class GibbsSampling {
 //			}
 //			System.out.println();
 //		}
-		if(type == 0)
-			computePerplexity(phi);
+			
 	}
 	
 	public void initializeModel() {
@@ -193,7 +192,8 @@ public class GibbsSampling {
 		if(type == 0)
 		{
 			saveIteratedModel(new File(path_res, "gibbs_final"));
-			save_top_words_corpus(20, new File(path_res, "top_words_corpus_gibbs"));
+			int[][] topwords = save_top_words_corpus(20, new File(path_res, "top_words_corpus_gibbs"));
+			computePerplexity(phi, topwords);
 		}
 	}
 	
@@ -294,11 +294,12 @@ public class GibbsSampling {
 	 * @param M     top M words
 	 * @param file  output file
 	 */
-	public void save_top_words_corpus(int M, File file)
+	public int[][] save_top_words_corpus(int M, File file)
 	{
 		int K = num_topics;
 		int V = corpus.num_terms;
 		String[][] res = new String[M][K];
+		int[][] topwords = new int[K][V];
 		for(int k = 0; k < K; k++)
 		{			
 			double[] temp = new double[V];
@@ -311,6 +312,7 @@ public class GibbsSampling {
 			for(int i = 0; i < M; i++)
 			{
 				res[i][k] = corpus.voc.idToWord.get(indexes[i]);
+				topwords[k][indexes[i]] = 1;
 			}
 		}
 		StringBuilder sb = new StringBuilder();
@@ -328,7 +330,9 @@ public class GibbsSampling {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		return topwords;
 	}
+	
 	
 	public void computePerplexity(double[][] phi)
 	{
@@ -355,6 +359,58 @@ public class GibbsSampling {
 				
 			}
 			N += doc.total;
+			perplex += log_p_w;
+		}
+		perplex = Math.exp(-(perplex/N));
+		perplex = Math.floor(perplex);
+		System.out.println(perplex);
+		System.out.println(theta[0][0]);
+		sb.append("Perplexity: " + perplex);
+		try {
+			String path_res = new File(path, "res_" + num_topics).getAbsolutePath();
+			File eval = new File(path_res, "gibss_eval"); 
+			FileUtils.writeStringToFile(eval, sb.toString());
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public void computePerplexity(double[][] phi, int[][] topwords)
+	{
+		System.out.println("========evaluate========");
+		double perplex = 0;
+		int N = 0;
+		StringBuilder sb = new StringBuilder();
+		GibbsSampling gibbs = new GibbsSampling(path, path_res, num_topics, corpus, 1, alpha, beta);
+		gibbs.run_gibbs();
+		double[][] theta = gibbs.theta;
+		
+		for(int m = 0; m < corpus.docs_test.length; m++)
+		{
+			Document doc = corpus.docs_test[m];
+			double log_p_w = 0;
+			for(int n = 0; n < doc.length; n++)
+			{
+				boolean flag = false;
+				for(int k = 0; k < num_topics; k++)
+				{
+					if(topwords[k][doc.ids[n]] == 1)
+					{
+						flag = true;
+						break;
+					}
+				}
+				if(flag)
+				{
+					double betaTtheta = 0;
+					for(int k = 0; k < num_topics; k++)
+					{
+						betaTtheta += phi[k][doc.ids[n]]*theta[m][k];
+					}
+					log_p_w += doc.counts[n]*Math.log(betaTtheta);
+					N += doc.counts[n];
+				}
+			}
 			perplex += log_p_w;
 		}
 		perplex = Math.exp(-(perplex/N));

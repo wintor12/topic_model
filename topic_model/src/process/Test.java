@@ -40,10 +40,10 @@ public class Test {
 		
 		//folder path is the running path, path_res is the output result path
 		
-		Corpus corpus = new Corpus(run_path, min_count, train_percentage, "LDA");
-		String path_res = new File(run_path, "res_" + K).getAbsolutePath();	
-		EM em = new EM(run_path, path_res, K, corpus, beta);
-		em.run_em("LDA");
+//		Corpus corpus = new Corpus(run_path, min_count, train_percentage, "LDA");
+//		String path_res = new File(run_path, "res_" + K).getAbsolutePath();	
+//		EM em = new EM(run_path, path_res, K, corpus, beta);
+//		em.run_em("LDA");
 		
 //		GibbsSampling g = new GibbsSampling(run_path, path_res, K, corpus, 0, alpha, beta);
 //		g.run_gibbs();

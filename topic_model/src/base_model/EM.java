@@ -255,9 +255,9 @@ public class EM {
 		}
 		
 		//Save top words of each topic among corpus
-		save_top_words_corpus(20, model, new File(path_res, "top_words_corpus"));
+		int[][] topwords = save_top_words_corpus(20, model, new File(path_res, "top_words_corpus"));
 		//Evaluation
-		computePerplexity(model);
+		computePerplexity(model, topwords);
 	}
 	
 
@@ -348,15 +348,17 @@ public class EM {
 	}
 	
 	/**
-	 * Save top words of each topic from whole corpus using beta
+	 * Save top words of each topic from whole corpus using Beta matrix
 	 * @param M     top M words
 	 * @param file  output file
+	 * @return topwords   K*V  top M probability words matrix, if it is top words, the value is 1, else 0 
 	 */
-	public void save_top_words_corpus(int M, Model model, File file)
+	public int[][] save_top_words_corpus(int M, Model model, File file)
 	{
 		int K = num_topics;
 		int V = corpus.num_terms;
 		String[][] res = new String[M][K];
+		int[][] topwords = new int[K][V];
 		for(int k = 0; k < K; k++)
 		{			
 			double[] temp = new double[V];
@@ -369,6 +371,7 @@ public class EM {
 			for(int i = 0; i < M; i++)
 			{
 				res[i][k] = corpus.voc.idToWord.get(indexes[i]);
+				topwords[k][indexes[i]] = 1;
 			}
 		}
 		StringBuilder sb = new StringBuilder();
@@ -386,6 +389,7 @@ public class EM {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		return topwords;
 	}
 	
 	/**
@@ -453,6 +457,69 @@ public class EM {
 		}
 	}
 	
+	/**
+	 * Compute perplexity only using top M words for each topic
+	 * Compute perplexity using alpha, beta, Beta(topic-words) learning from training set
+	 * Compute theta through gibbs sampling in test set.
+	 * @param model 
+	 * @param topwords   K*V  top M probability words matrix getting from save_top_words_corpus
+	 * 							if it is top words, the value is 1, else 0 
+	 */
+	public void computePerplexity(Model model, int[][] topwords)
+	{
+		System.out.println("========evaluate========");
+		double perplex = 0;
+		int N = 0;
+		StringBuilder sb = new StringBuilder();
+		GibbsSampling gibbs = new GibbsSampling(path, path_res, num_topics, corpus, 1, alpha, beta);
+		gibbs.run_gibbs();
+		double[][] theta = gibbs.theta;
+		for(int m = 0; m < corpus.docs_test.length; m++)
+		{
+			Document doc = corpus.docs_test[m];
+			double log_p_w = 0;
+			for(int n = 0; n < doc.length; n++)
+			{
+				boolean flag = false;
+				for(int k = 0; k < num_topics; k++)
+				{
+					if(topwords[k][doc.ids[n]] == 1)
+					{
+						flag = true;
+						break;
+					}
+				}
+				if(flag == true)
+				{
+					double betaTtheta = 0;
+					for(int k = 0; k < num_topics; k++)
+					{					
+						betaTtheta += Math.exp(model.log_prob_w[k][doc.ids[n]])*theta[m][k];
+					}
+					log_p_w += doc.counts[n]*Math.log(betaTtheta);
+					N += doc.counts[n];
+				}
+				
+			}
+			perplex += log_p_w;
+		}
+		perplex = Math.exp(-(perplex/N));
+		perplex = Math.floor(perplex);
+		System.out.println(perplex);
+		System.out.println(theta[0][0]);
+		sb.append("Perplexity: " + perplex);
+		try {
+			File eval = new File(path_res, "eval"); 
+			FileUtils.writeStringToFile(eval, sb.toString());
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	/**
+	 * Compute complexity using all words in test set
+	 * @param model
+	 */
 	public void computePerplexity(Model model)
 	{
 		System.out.println("========evaluate========");
