@@ -10,10 +10,10 @@ import process.Preprocess;
 
 
 public class Corpus {
-	public Document[] docs;
+	public Document[] docs;          
 	public Document[] docs_test;
-	public int num_terms;
-    public int num_docs;
+	public int num_terms;            //V
+    public int num_docs;             //M
     public int num_docs_test;
     public Vocabulary voc;
     public String path;

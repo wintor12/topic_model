@@ -16,6 +16,7 @@ public class Document {
 	public String[] words;
     public int[] counts;
     public int[] ids;
+    public int[] z;     //Topic assignment
     public int length;  //Total unique words
     public int total;   //Total words
     public String doc_name;
@@ -31,7 +32,7 @@ public class Document {
     public int num_e2;  //total number of edges with distance 2
     public double exp_theta_square;
     
-    public int[] word_topic;
+    public int[] word_topic;   
     public double[] theta;
     
     public double[] gamma;  //variational dirichlet parameter, K dimension  initialized when run EM
@@ -81,6 +82,10 @@ public class Document {
     		}
     	}
     	this.length = wordCount.size();
+    	//Initialize word topic assignment to -1. topic assignment ranges from 0 to k-1 
+    	this.z = new int[this.length];
+    	for(int i = 0; i < length; i++)
+    		z[i] = -1;
     	words = new String[wordCount.size()];
     	counts = new int[wordCount.size()];
     	ids = new int[wordCount.size()];

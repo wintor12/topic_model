@@ -6,6 +6,7 @@ import java.text.DecimalFormat;
 import java.util.Arrays;
 
 
+
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.math3.special.Gamma;
 
@@ -13,17 +14,20 @@ import base_model.Tools.ArrayIndexComparator;
 
 public class EM {
 
-	public int num_topics; // topic numbers
+	public int num_topics; // topic numbers   K
 	public int VAR_MAX_ITER;
 	public double VAR_CONVERGED;
 	public int EM_MAX_ITER;
 	public double EM_CONVERGED;
-	public double alpha;
+	public double alpha;     //dirichlet prior of topic mixture 
+	public double beta;      //dirichlet prior of word mixture, used for gibbs initialize suf statistic
 	public String path = ""; //running path
+	public String path_res = ""; //result path
 	public Corpus corpus;
 
-	public EM(String path, int num_topics, Corpus corpus) {
+	public EM(String path, String path_res, int num_topics, Corpus corpus, double beta) {
 		this.path = path;
+		this.path_res = path_res;
 		this.num_topics = num_topics; // topic numbers
 		this.VAR_MAX_ITER = 20;
 		this.VAR_CONVERGED = 1e-6;
@@ -31,10 +35,12 @@ public class EM {
 		this.EM_CONVERGED = 1e-4;
 		this.alpha = 0.1;
 		this.corpus = corpus;
+		this.beta = beta;
 	}
 
-	public EM(String path, int num_topics, Corpus corpus, int vAR_MAX_ITER, double vAR_CONVERGED,
-			int eM_MAX_ITER, double eM_CONVERGED, double alpha) {
+	public EM(String path, String path_res, int num_topics, Corpus corpus, int vAR_MAX_ITER, double vAR_CONVERGED,
+			int eM_MAX_ITER, double eM_CONVERGED, double alpha, double beta) {
+		this.path_res = path_res;
 		this.num_topics = num_topics;
 		this.VAR_MAX_ITER = vAR_MAX_ITER;
 		this.VAR_CONVERGED = vAR_CONVERGED;
@@ -43,6 +49,7 @@ public class EM {
 		this.alpha = alpha;
 		this.path = path;
 		this.corpus = corpus;
+		this.beta = beta;
 	}
 	
 	public double doc_e_step(Document doc, Model model, Suffstats ss)
@@ -160,15 +167,15 @@ public class EM {
 	    return likelihood;
 	}
 	
-	public void run_em(String path_res_name, String type)
+	public void run_em(String type)
 	{ 
-		String path_res = new File(path, path_res_name).getAbsolutePath();
 		String path_model = new File(path_res, "model").getAbsolutePath();
 		
 		Model model = new Model(num_topics, corpus.num_terms, alpha);
-		Suffstats ss = new Suffstats(model);
+		Suffstats ss = new Suffstats(model, corpus, beta);
 		//Random initialize joint probability of p(w, k), and compute p(k) by sum over p(w, k)
-		ss.random_initialize_ss();
+//		ss.random_initialize_ss();
+		ss.gibbs_initialize_ss();
 		model.mle(ss, true); //get initial beta
 		
 		model.save_lda_model(new File(path_model, "init").getAbsolutePath());		
@@ -182,7 +189,8 @@ public class EM {
 			i++;
 			System.out.println("**** em iteration " + i + "****");
 			likelihood = 0;
-			ss.zero_initialize_ss();
+			ss.beta_initialize_ss();
+//			ss.zero_initialize_ss();
 			//E step
 			for(int d = 0; d < corpus.num_docs; d++)
 			{
@@ -235,17 +243,19 @@ public class EM {
 		
 		// output the word assignments (for visualization) and top words for each document
 		
-		String path_post = new File(path_res, "word_topic_post").getAbsolutePath();
-		String path_topwords = new File(path_res, "top_words").getAbsolutePath();
+//		String path_post = new File(path_res, "word_topic_post").getAbsolutePath();
+//		String path_topwords = new File(path_res, "top_words").getAbsolutePath();
 		for(int d = 0; d < corpus.num_docs; d++)
 		{
 			if(d%100 == 0)
 				System.out.println("final e step document " + d);
 			lda_inference(corpus.docs[d], model);
-			save_word_assignment(corpus.docs[d], new File(path_post, corpus.docs[d].doc_name));
-			save_top_words(10, corpus.docs[d], new File(path_topwords, corpus.docs[d].doc_name));
+//			save_word_assignment(corpus.docs[d], new File(path_post, corpus.docs[d].doc_name));
+//			save_top_words(10, corpus.docs[d], new File(path_topwords, corpus.docs[d].doc_name));
 		}
 		
+		//Save top words of each topic among corpus
+		save_top_words_corpus(20, model, new File(path_res, "top_words_corpus"));
 		//Evaluation
 		computePerplexity(model);
 	}
@@ -293,7 +303,12 @@ public class EM {
 		}
 	}
 	
-	//Choose top M words of a topic in one document 
+	/**
+	 * return top M words of a topic in one document from phi
+	 * @param M      top M words
+	 * @param doc
+	 * @param file   output file
+	 */
 	public void save_top_words(int M, Document doc, File file)
 	{				
 		int K = doc.gamma.length;  //topics
@@ -313,6 +328,47 @@ public class EM {
 				if(i == doc.ids.length)
 					break;
 				res[i][k] = corpus.voc.idToWord.get(doc.ids[indexes[i]]);
+			}
+		}
+		StringBuilder sb = new StringBuilder();
+		for(int i = 0; i < M; i++)
+		{
+			for(int k = 0; k < K; k++)
+			{
+				sb.append(String.format("%-15s" , res[i][k]));
+			}
+			sb.append(System.getProperty("line.separator"));
+			
+		}
+		try {
+			FileUtils.writeStringToFile(file, sb.toString());
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	/**
+	 * Save top words of each topic from whole corpus using beta
+	 * @param M     top M words
+	 * @param file  output file
+	 */
+	public void save_top_words_corpus(int M, Model model, File file)
+	{
+		int K = num_topics;
+		int V = corpus.num_terms;
+		String[][] res = new String[M][K];
+		for(int k = 0; k < K; k++)
+		{			
+			double[] temp = new double[V];
+			for(int v = 0; v < V; v++)
+				temp[v] = model.log_prob_w[k][v];
+			Tools tools = new Tools();
+			ArrayIndexComparator comparator = tools.new ArrayIndexComparator(temp);
+			Integer[] indexes = comparator.createIndexArray();
+			Arrays.sort(indexes, comparator);
+			for(int i = 0; i < M; i++)
+			{
+				res[i][k] = corpus.voc.idToWord.get(indexes[i]);
 			}
 		}
 		StringBuilder sb = new StringBuilder();
@@ -403,6 +459,45 @@ public class EM {
 		double perplex = 0;
 		int N = 0;
 		StringBuilder sb = new StringBuilder();
+		GibbsSampling gibbs = new GibbsSampling(path, path_res, num_topics, corpus, 1, alpha, beta);
+		gibbs.run_gibbs();
+		double[][] theta = gibbs.theta;
+		for(int m = 0; m < corpus.docs_test.length; m++)
+		{
+			Document doc = corpus.docs_test[m];
+			double log_p_w = 0;
+			for(int n = 0; n < doc.length; n++)
+			{
+				double betaTtheta = 0;
+				for(int k = 0; k < num_topics; k++)
+				{
+					betaTtheta += Math.exp(model.log_prob_w[k][doc.ids[n]])*theta[m][k];
+				}
+				log_p_w += doc.counts[n]*Math.log(betaTtheta);
+				
+			}
+			N += doc.total;
+			perplex += log_p_w;
+		}
+		perplex = Math.exp(-(perplex/N));
+		perplex = Math.floor(perplex);
+		System.out.println(perplex);
+		System.out.println(theta[0][0]);
+		sb.append("Perplexity: " + perplex);
+		try {
+			File eval = new File(path_res, "eval"); 
+			FileUtils.writeStringToFile(eval, sb.toString());
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public void computePerplexity_old(Model model)
+	{
+		System.out.println("========evaluate========");
+		double perplex = 0;
+		int N = 0;
+		StringBuilder sb = new StringBuilder();
 		for(Document doc: corpus.docs_test)
 		{
 //			sb.append(doc.doc_name);
@@ -436,8 +531,8 @@ public class EM {
 		System.out.println(perplex);
 		sb.append("Perplexity: " + perplex);
 		try {
-			String path_res = new File(path, "res_" + num_topics).getAbsolutePath();
 			File eval = new File(path_res, "eval"); 
+			System.out.println(eval.getAbsolutePath());
 			FileUtils.writeStringToFile(eval, sb.toString());
 		} catch (IOException e) {
 			e.printStackTrace();

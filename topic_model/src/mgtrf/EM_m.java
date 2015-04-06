@@ -15,8 +15,8 @@ public class EM_m extends EM{
 	public double lambda2;
 	public double lambda4;
 
-	public EM_m(String path, int num_topics, Corpus corpus, double lambda2, double lambda4) {
-		super(path, num_topics, corpus);
+	public EM_m(String path, String path_res, int num_topics, Corpus corpus, double beta, double lambda2, double lambda4) {
+		super(path, path_res, num_topics, corpus, beta);
 		this.lambda4 = lambda4;
 	}
 

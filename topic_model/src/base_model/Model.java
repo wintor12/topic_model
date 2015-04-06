@@ -10,7 +10,7 @@ import org.apache.commons.math3.special.Gamma;
 
 public class Model {
 	
-	public double[][] log_prob_w; //log beta
+	public double[][] log_prob_w; //log beta   K*V
 	public double alpha;
 	public int num_topics;
 	int num_terms;
@@ -36,10 +36,13 @@ public class Model {
 	        for (w = 0; w < num_terms; w++)
 	        {	        	
 	        	//log p(w|k) = log(p(w,k)/p(k)) = log p(w,k) - log p(w)
-	            if (ss.class_word[k][w] > 0)
-	                this.log_prob_w[k][w] = Math.log(ss.class_word[k][w]) - Math.log(ss.class_total[k]);
-	            else
-	                this.log_prob_w[k][w] = -100;
+//	            if (ss.class_word[k][w] > 0)
+//	                this.log_prob_w[k][w] = Math.log(ss.class_word[k][w]) - Math.log(ss.class_total[k]);
+//	            else
+//	                this.log_prob_w[k][w] = -100;
+	        	if(ss.class_word[k][w] == 0)
+	        		System.out.println("===============errir");
+	        	this.log_prob_w[k][w] = Math.log(ss.class_word[k][w]) - Math.log(ss.class_total[k]);
 	        }
 	    }
 		
@@ -95,7 +98,8 @@ public class Model {
 	    {
 	        for (w = 0; w < num_terms; w++)
 	        {
-	        	sb.append(df.format(this.log_prob_w[k][w]) + " ");
+//	        	sb.append(df.format(Math.exp(this.log_prob_w[k][w])) + " ");
+	        	sb.append(Math.exp(this.log_prob_w[k][w]) + " ");
 	        }
 	        sb.append(System.getProperty("line.separator"));
         }

@@ -15,16 +15,16 @@ public class EM_g extends EM{
 
 	public double lambda2;
 	
-	public EM_g(String path, int num_topics, Corpus corpus, double lambda2,
+	public EM_g(String path, String path_res, int num_topics, Corpus corpus, double lambda2,
 			int vAR_MAX_ITER, double vAR_CONVERGED, int eM_MAX_ITER,
-			double eM_CONVERGED, double alpha) {
-		super(path, num_topics, corpus, vAR_MAX_ITER, vAR_CONVERGED, eM_MAX_ITER,
-				eM_CONVERGED, alpha);
+			double eM_CONVERGED, double alpha, double beta) {
+		super(path, path_res, num_topics, corpus, vAR_MAX_ITER, vAR_CONVERGED, eM_MAX_ITER,
+				eM_CONVERGED, alpha, beta);
 		this.lambda2 = lambda2;
 	}
 
-	public EM_g(String path, int num_topics, Corpus corpus, double lambda2) {
-		super(path, num_topics, corpus);
+	public EM_g(String path, String path_res, int num_topics, Corpus corpus, double beta, double lambda2) {
+		super(path, path_res, num_topics, corpus, beta);
 		this.lambda2 = lambda2;
 	}
 
