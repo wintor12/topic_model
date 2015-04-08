@@ -257,7 +257,9 @@ public class EM {
 		//Save top words of each topic among corpus
 		int[][] topwords = save_top_words_corpus(20, model, new File(path_res, "top_words_corpus"));
 		//Evaluation
-		computePerplexity(model, topwords);
+		computePerplexity_gibbs(model, topwords);
+//		computePerplexity_gibbs(model);
+//		computePerplexity_old(model);
 	}
 	
 
@@ -457,6 +459,12 @@ public class EM {
 		}
 	}
 	
+	
+	public void computePerplexity(Model model)
+	{
+		System.out.println("========evaluate========");
+	}
+	
 	/**
 	 * Compute perplexity only using top M words for each topic
 	 * Compute perplexity using alpha, beta, Beta(topic-words) learning from training set
@@ -465,7 +473,7 @@ public class EM {
 	 * @param topwords   K*V  top M probability words matrix getting from save_top_words_corpus
 	 * 							if it is top words, the value is 1, else 0 
 	 */
-	public void computePerplexity(Model model, int[][] topwords)
+	public void computePerplexity_gibbs(Model model, int[][] topwords)
 	{
 		System.out.println("========evaluate========");
 		double perplex = 0;
@@ -510,23 +518,27 @@ public class EM {
 		sb.append("Perplexity: " + perplex);
 		try {
 			File eval = new File(path_res, "eval"); 
-			FileUtils.writeStringToFile(eval, sb.toString());
+			File all_eval = new File(path, "eval");
+			String s = path_res + " : " + perplex + System.getProperty("line.separator");
+			FileUtils.writeStringToFile(all_eval, s, true);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
+
 	
 	/**
 	 * Compute complexity using all words in test set
+	 * Compute theta through gibbs sampling in test set.
 	 * @param model
 	 */
-	public void computePerplexity(Model model)
+	public void computePerplexity_gibbs(Model model)
 	{
 		System.out.println("========evaluate========");
 		double perplex = 0;
 		int N = 0;
 		StringBuilder sb = new StringBuilder();
-		GibbsSampling gibbs = new GibbsSampling(path, path_res, num_topics, corpus, 1, alpha, beta);
+		GibbsSampling gibbs = new GibbsSampling(path, path_res, num_topics, corpus, 1, alpha, beta, 10, 500, 1000);
 		gibbs.run_gibbs();
 		double[][] theta = gibbs.theta;
 		for(int m = 0; m < corpus.docs_test.length; m++)
@@ -553,7 +565,9 @@ public class EM {
 		sb.append("Perplexity: " + perplex);
 		try {
 			File eval = new File(path_res, "eval"); 
-			FileUtils.writeStringToFile(eval, sb.toString());
+			File all_eval = new File(path, "eval");
+			String s = path_res + " : " + perplex + System.getProperty("line.separator");
+			FileUtils.writeStringToFile(all_eval, s, true);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -599,8 +613,10 @@ public class EM {
 		sb.append("Perplexity: " + perplex);
 		try {
 			File eval = new File(path_res, "eval"); 
-			System.out.println(eval.getAbsolutePath());
+			File all_eval = new File(path, "eval");
 			FileUtils.writeStringToFile(eval, sb.toString());
+			String s = path_res + " : " + perplex + System.getProperty("line.separator");
+			FileUtils.writeStringToFile(all_eval, s, true);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

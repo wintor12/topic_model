@@ -43,9 +43,8 @@ public class GibbsSampling {
 	
 	
 	
-	public GibbsSampling(int num_topics, int iterations, String path, String path_res, Corpus corpus, int type,
-			int saveStep, int beginSaveIters) {
-		super();
+	public GibbsSampling(String path, String path_res, int num_topics, Corpus corpus, int type, double alpha, double beta,
+			int saveStep, int beginSaveIters, int iterations) {
 		this.num_topics = num_topics;
 		this.iterations = iterations;
 		this.path = path;
@@ -54,8 +53,8 @@ public class GibbsSampling {
 		this.type = type;
 		this.saveStep = saveStep;
 		this.beginSaveIters = beginSaveIters;
-		this.beta = 0.1;
-		this.alpha = 0.1;
+		this.beta = beta;
+		this.alpha = alpha;
 	}
 
 	public GibbsSampling(String path, String path_res, int num_topics, Corpus corpus, int type) {
@@ -193,7 +192,8 @@ public class GibbsSampling {
 		{
 			saveIteratedModel(new File(path_res, "gibbs_final"));
 			int[][] topwords = save_top_words_corpus(20, new File(path_res, "top_words_corpus_gibbs"));
-			computePerplexity(phi, topwords);
+//			computePerplexity(phi, topwords);
+			computePerplexity(phi);
 		}
 	}
 	
@@ -239,7 +239,8 @@ public class GibbsSampling {
 		for(int k = 1; k < K; k++){
 			p[k] += p[k - 1];
 		}
-		double u = mt2.nextDouble() * p[K - 1]; //p[] is unnormalised
+		double u = mt2.nextDouble() * p[K - 1];
+//		double u = Math.random() * p[K - 1]; //p[] is unnormalised
 		int newTopic;
 		for(newTopic = 0; newTopic < K; newTopic++){
 			if(u < p[newTopic]){
@@ -340,7 +341,7 @@ public class GibbsSampling {
 		double perplex = 0;
 		int N = 0;
 		StringBuilder sb = new StringBuilder();
-		GibbsSampling gibbs = new GibbsSampling(path, path_res, num_topics, corpus, 1, alpha, beta);
+		GibbsSampling gibbs = new GibbsSampling(path, path_res, num_topics, corpus, 1, alpha, beta, 10, 500, 1000);
 		gibbs.run_gibbs();
 		double[][] theta = gibbs.theta;
 		
@@ -368,8 +369,11 @@ public class GibbsSampling {
 		sb.append("Perplexity: " + perplex);
 		try {
 			String path_res = new File(path, "res_" + num_topics).getAbsolutePath();
-			File eval = new File(path_res, "gibss_eval"); 
+			File eval = new File(path_res, "gibbs_eval"); 
+			File all_eval = new File(path, "gibbs_eval");
+			String s = path_res + " : " + perplex + System.getProperty("line.separator");
 			FileUtils.writeStringToFile(eval, sb.toString());
+			FileUtils.writeStringToFile(all_eval, s, true);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -420,8 +424,11 @@ public class GibbsSampling {
 		sb.append("Perplexity: " + perplex);
 		try {
 			String path_res = new File(path, "res_" + num_topics).getAbsolutePath();
-			File eval = new File(path_res, "gibss_eval"); 
+			File eval = new File(path_res, "gibbs_eval"); 
+			File all_eval = new File(path, "gibbs_eval");
+			String s = path_res + " : " + perplex + System.getProperty("line.separator");
 			FileUtils.writeStringToFile(eval, sb.toString());
+			FileUtils.writeStringToFile(all_eval, s, true);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
