@@ -41,7 +41,7 @@ public class Model {
 //	            else
 //	                this.log_prob_w[k][w] = -100;
 	        	if(ss.class_word[k][w] == 0)
-	        		System.out.println("===============errir");
+	        		System.out.println("===============error");
 	        	this.log_prob_w[k][w] = Math.log(ss.class_word[k][w]) - Math.log(ss.class_total[k]);
 	        }
 	    }

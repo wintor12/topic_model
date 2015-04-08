@@ -66,7 +66,8 @@ public class EM_g extends EM{
 		    			for(int adj_id = 0; adj_id < list.size(); adj_id++)
 		    			{
 //		    				System.out.println(doc.doc_name);
-							sumadj[n][k] += oldphi[doc.idToIndex.get(list.get(adj_id))][k];
+		    				//sumadj is in log form
+							sumadj[n][k] += doc.counts[n] * Math.log(oldphi[doc.idToIndex.get(list.get(adj_id))][k]);
 							exp_ec += oldphi[n][k] * oldphi[doc.idToIndex.get(list.get(adj_id))][k];
 							
 		    			}
@@ -84,8 +85,17 @@ public class EM_g extends EM{
 	    	}
 	    	doc.exp_theta_square = exp_theta_square/(sum_gamma*(sum_gamma + 1));
 	    	
-	    	doc.zeta1 = Math.log((1 - lambda2)*doc.exp_ec + lambda2 * doc.num_e * doc.exp_theta_square);
-	    	doc.zeta2 = Math.log(doc.num_e * doc.exp_theta_square);
+//	    	if(doc.doc_name.equals("15822"))
+//		    {
+//		    	System.out.println("===========exp_ec============" + doc.exp_ec);
+//		    	System.out.println("===========num_e============" + doc.num_e);
+//		    	System.out.println("===========exp_theta_square============" + doc.exp_theta_square);
+//		    	System.out.println("===========re============" + (1 - lambda2)*doc.exp_ec + lambda2 * doc.num_e * doc.exp_theta_square);
+//		    }
+	    	doc.zeta1 = Math.log((1 - lambda2)*doc.exp_ec + lambda2 * doc.num_e * doc.exp_theta_square) >=1? 
+	    			Math.log((1 - lambda2)*doc.exp_ec + lambda2 * doc.num_e * doc.exp_theta_square):1;
+	    	doc.zeta2 = Math.log(doc.num_e * doc.exp_theta_square) >= 1?
+	    			Math.log(doc.num_e * doc.exp_theta_square) : 1;
 	    	
 	    	for(int n = 0; n < doc.length; n++)
 	    	{
@@ -95,7 +105,7 @@ public class EM_g extends EM{
 	    			//phi = beta * exp(digamma(gamma) + (1-lambda2)/zeta1 * sum(phi(m, i)))  m is adj of n 
 	    			//-> log phi = log (beta) + digamma(gamma) + (1-lambda2)/zeta1 * sum(phi(m, i))
 	    			doc.phi[n][k] = model.log_prob_w[k][doc.ids[n]] + digamma_gam[k] + 
-	    					((1 - lambda2)/doc.zeta1)*sumadj[n][k];
+	    					((1 - lambda2)/doc.zeta1)*Math.exp(sumadj[n][k]);
 	    			if (k > 0)
 	                    phisum = Tools.log_sum(phisum, doc.phi[n][k]);
 	                else
@@ -128,9 +138,11 @@ public class EM_g extends EM{
 	public double compute_likelihood(Document doc, Model model) {
 		// TODO Auto-generated method stub
 		double likelihood = super.compute_likelihood(doc, model);
+		
 		likelihood += ((1 - lambda2)/doc.zeta1)*doc.exp_ec - 
 	    		(((doc.zeta1 - doc.zeta2 * lambda2)/(doc.zeta1 * doc.zeta2)) * doc.num_e)*doc.exp_theta_square + 
 	    		Math.log(doc.zeta1) - Math.log(doc.zeta2);
+		
 		return likelihood;
 	}
 

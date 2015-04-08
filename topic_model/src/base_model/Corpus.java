@@ -85,6 +85,15 @@ public class Corpus {
 			Document doc = new Document(path, files.get(i).getName(), voc);
 			doc.formatDocument(); //format document to word: count, and set words, counts, ids array
 //			System.out.println("Document " + d + " contain unique words : " + doc.length);
+			if(type.equals("GTRF"))
+			{
+				doc.getEdges2();
+			}
+			if(type.equals("MGTRF"))
+			{
+				doc.getEdges2();
+				doc.getEdges3();
+			}
 			docs_test[j] = doc;
 			j++;
 			i++;
