@@ -52,6 +52,7 @@ public class Preprocess {
 	String path_edges;  //the edges of a tree document, has format term:[term1, term2]
 	String path_train;
 	String path_test;
+	String path_sentences;
 	List<String> stopwords;
 	
 	public Preprocess(String run_path, String data_path, String stopwords_path)
@@ -61,6 +62,7 @@ public class Preprocess {
 		this.path_words = new File(run_path, "data_words").getAbsolutePath();
 		this.path_trees = new File(run_path, "data_trees").getAbsolutePath();
 		this.path_edges = new File(run_path, "data_edges").getAbsolutePath();
+		this.path_sentences = new File(run_path, "data_sentences").getAbsolutePath();
 		this.path_train = new File(run_path, "training").getAbsolutePath();
 		this.path_test = new File(run_path, "testing").getAbsolutePath();
 		String text = "";
@@ -71,6 +73,46 @@ public class Preprocess {
 		}
 		String[] words = text.split(" ");
 		stopwords = Arrays.asList(words);
+	}
+	
+	/**
+	 * Generate bag of words documents from "path_documents" 
+	 * Output to path_words
+	 */
+	public void getSentences() {
+		Properties props = new Properties();
+		props.put("annotators", "tokenize, ssplit");
+		StanfordCoreNLP pipeline = new StanfordCoreNLP(props);
+		for (File file : listDir(path_documents)) {
+			String name = file.getName();
+			System.out.println(name);
+			StringBuilder sb = new StringBuilder(); // bag of words
+			String text = "";
+			try {
+				text = FileUtils.readFileToString(file);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			Annotation document = new Annotation(text);
+			pipeline.annotate(document);
+			List<CoreMap> sentences = document.get(SentencesAnnotation.class);
+			for (CoreMap s : sentences) {
+				for (CoreLabel token : s.get(TokensAnnotation.class)) {
+					String word = token.toString().toLowerCase();
+					if (word.matches("[a-z]+")) {
+						if (!stopwords.contains(word))
+							sb.append(word + " ");
+					}
+				}
+				sb.append(System.getProperty("line.separator"));
+			}
+			try {
+				FileUtils.writeStringToFile(new File(path_sentences, name),
+						sb.toString());
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 	
 	/**
@@ -273,6 +315,10 @@ public class Preprocess {
 		}
 	}
 	
+	/**
+	 * Do not use any more
+	 * @param percentage
+	 */
 	public void selectTrainingAndTestingData(double percentage)
 	{
 		File train = new File(this.path_train);

@@ -500,6 +500,7 @@ public class EM {
 		}
 	}
 	
+	
 	/**
 	 * Compute perplexity only using top M words for each topic
 	 * Compute perplexity using alpha, beta, Beta(topic-words) learning from training set
