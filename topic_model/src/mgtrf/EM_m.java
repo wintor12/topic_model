@@ -17,6 +17,7 @@ public class EM_m extends EM{
 
 	public EM_m(String path, String path_res, int num_topics, Corpus corpus, double beta, double lambda2, double lambda4) {
 		super(path, path_res, num_topics, corpus, beta);
+		this.lambda2 = lambda2;
 		this.lambda4 = lambda4;
 	}
 
@@ -90,8 +91,8 @@ public class EM_m extends EM{
 	    	}
 	    	doc.exp_theta_square = exp_theta_square/(sum_gamma*(sum_gamma + 1));
 	    	
-	    	doc.zeta1 = Math.log((1 - lambda2)*doc.exp_ec + lambda2 * doc.num_e * doc.exp_theta_square + 
-	    			(1 - lambda4)*doc.exp_ec2 + lambda4 * doc.num_e2 * doc.exp_theta_square);
+	    	doc.zeta1 = Math.log((1 - lambda2)*doc.exp_ec + lambda2 * doc.num_e * doc.exp_ec + 
+	    			(1 - lambda4)*doc.exp_ec2 + lambda4 * doc.num_e2 * doc.exp_ec2);
 	    	doc.zeta1 = doc.zeta1 >= 1?doc.zeta1:1;
 	    	doc.zeta2 = Math.log((doc.num_e + doc.num_e2) * doc.exp_theta_square);
 	    	doc.zeta2 = doc.zeta2 >= 1? doc.zeta2:1;

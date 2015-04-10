@@ -92,10 +92,10 @@ public class EM_g extends EM{
 //		    	System.out.println("===========exp_theta_square============" + doc.exp_theta_square);
 //		    	System.out.println("===========re============" + (1 - lambda2)*doc.exp_ec + lambda2 * doc.num_e * doc.exp_theta_square);
 //		    }
-	    	doc.zeta1 = Math.log((1 - lambda2)*doc.exp_ec + lambda2 * doc.num_e * doc.exp_theta_square) >=1? 
-	    			Math.log((1 - lambda2)*doc.exp_ec + lambda2 * doc.num_e * doc.exp_theta_square):1;
-	    	doc.zeta2 = Math.log(doc.num_e * doc.exp_theta_square) >= 1?
-	    			Math.log(doc.num_e * doc.exp_theta_square) : 1;
+	    	doc.zeta1 = Math.log((1 - lambda2)*doc.exp_ec + lambda2 * doc.num_e * doc.exp_ec) >=1? 
+	    			Math.log((1 - lambda2)*doc.exp_ec + lambda2 * doc.num_e * doc.exp_ec):1;
+	    	doc.zeta2 = Math.log(doc.num_e * doc.exp_ec) >= 1?
+	    			Math.log(doc.num_e * doc.exp_ec) : 1;
 	    	
 	    	for(int n = 0; n < doc.length; n++)
 	    	{
