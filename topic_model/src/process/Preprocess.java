@@ -104,7 +104,7 @@ public class Preprocess {
 							sb.append(word + " ");
 					}
 				}
-				sb.append(System.getProperty("line.separator"));
+				sb.append("\n");
 			}
 			try {
 				FileUtils.writeStringToFile(new File(path_sentences, name),
@@ -205,7 +205,7 @@ public class Preprocess {
 						sb2.append(wordnode.substring(wordnode.indexOf('('),
 								wordnode.indexOf(')') + 1) + "\t");
 					}
-					sb2.append(System.getProperty("line.separator"));
+					sb2.append("\n");
 				} catch (Exception e) {
 					System.out.println("error sentence:" + s.toString());
 				}
@@ -306,7 +306,7 @@ public class Preprocess {
 			String term = entry.getKey();
 			List<String> adj_term = entry.getValue();
 			sb.append(term + ":" + adj_term.toString());
-			sb.append(System.getProperty("line.separator"));
+			sb.append("\n");
 		}
 		try {
 			FileUtils.writeStringToFile(new File(path_edges, name), sb.toString());
@@ -331,12 +331,12 @@ public class Preprocess {
 		for(i = 0; i < num_train; i++)
 		{			
 			sb.append(files.get(i).getName());
-			sb.append(System.getProperty("line.separator"));
+			sb.append("\n");
 		}
 		for(i = num_train; i < files.size(); i++)
 		{			
 			sb2.append(files.get(i).getName());
-			sb2.append(System.getProperty("line.separator"));
+			sb2.append("\n");
 		}
 		try {
 			FileUtils.writeStringToFile(train, sb.toString());

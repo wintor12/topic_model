@@ -126,7 +126,7 @@ public class Vocabulary {
 			int id = entry.getKey();
 			String word = entry.getValue();
 			sb.append(id + ":" + word);
-			sb.append(System.getProperty("line.separator"));
+			sb.append("\n");
 		}
 		try {
 			FileUtils.writeStringToFile(new File(filepath), sb.toString());
@@ -139,7 +139,7 @@ public class Vocabulary {
 			int count = entry.getValue();
 			String word = entry.getKey();
 			sb.append(word + ":" + count);
-			sb.append(System.getProperty("line.separator"));
+			sb.append("\n");
 		}
 		try {
 			FileUtils.writeStringToFile(new File(filepath + "count"), sb.toString());

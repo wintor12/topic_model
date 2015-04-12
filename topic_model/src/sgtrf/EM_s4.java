@@ -6,23 +6,20 @@ import org.apache.commons.math3.special.Gamma;
 
 import base_model.Corpus;
 import base_model.Document;
-import base_model.EM;
 import base_model.Model;
 import base_model.Tools;
 
 /**
  * This class is similar to EM_g, except using word similarity 
+ * use word similarity as threshold, if similarity > 0, then coherent edge
  */
-public class EM_s2 extends EM{
-	public double lambda2;
-	public double[][] sim = null;
-	
-	public EM_s2(String path, String path_res, int num_topics, Corpus corpus, double beta, double lambda2, double[][] sim) {
-		super(path, path_res, num_topics, corpus, beta);
-		this.lambda2 = lambda2;
-		this.sim = sim;
-	}
+public class EM_s4 extends EM_s2{
 
+	public EM_s4(String path, String path_res, int num_topics, Corpus corpus,
+			double beta, double lambda2, double[][] sim) {
+		super(path, path_res, num_topics, corpus, beta, lambda2, sim);
+	}
+	
 	@Override
 	public double lda_inference(Document doc, Model model) {
 		double likelihood = 0, likelihood_old = 0;
@@ -50,7 +47,6 @@ public class EM_s2 extends EM{
 	    	//sum over phi of all adj nodes of current node
 		    double[][] sumadj = new double[doc.length][model.num_topics]; //sum of phi of words which are adjacent to current node
 		    double exp_ec = 0;  //expectation of coherent edges;
-
 	    	for(int n = 0; n < doc.length; n++)
 	    	{
 	    		for(int k = 0; k < model.num_topics; k++)
@@ -62,9 +58,11 @@ public class EM_s2 extends EM{
 		    			for(int adj_id = 0; adj_id < list.size(); adj_id++)
 		    			{
 		    				double similarity = sim[doc.ids[n]][list.get(adj_id)];
-
-		    				sumadj[n][k] += oldphi[doc.idToIndex.get(list.get(adj_id))][k]*similarity;
-							exp_ec += oldphi[n][k] * oldphi[doc.idToIndex.get(list.get(adj_id))][k]*similarity;
+		    				if(similarity > -0.1)
+		    				{
+								sumadj[n][k] += oldphi[doc.idToIndex.get(list.get(adj_id))][k];
+								exp_ec += oldphi[n][k] * oldphi[doc.idToIndex.get(list.get(adj_id))][k];
+		    				}
 		    			}
 	    			}
 	    		}
@@ -82,7 +80,7 @@ public class EM_s2 extends EM{
 	    	
 	    	doc.zeta1 = (1 - lambda2)*doc.exp_ec + lambda2 * doc.num_e * doc.exp_theta_square;
 	    	doc.zeta2 = doc.num_e * doc.exp_theta_square;
-
+	    	
 	    	for(int n = 0; n < doc.length; n++)
 	    	{
 	    		double phisum = 0;
@@ -119,7 +117,7 @@ public class EM_s2 extends EM{
 	    }
 	    return likelihood;
     }
-
+	
 	@Override
 	public double compute_likelihood(Document doc, Model model) {
 		// TODO Auto-generated method stub
@@ -131,4 +129,5 @@ public class EM_s2 extends EM{
 		
 		return likelihood;
 	}
+
 }

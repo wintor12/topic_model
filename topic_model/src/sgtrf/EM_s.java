@@ -1,10 +1,7 @@
 package sgtrf;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.List;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.math3.special.Gamma;
 
 import base_model.Corpus;
@@ -12,6 +9,10 @@ import base_model.Document;
 import base_model.EM;
 import base_model.Model;
 import base_model.Tools;
+
+/**
+ * This class is similar to EM_m, except using word similarity 
+ */
 
 public class EM_s extends EM {
 	public double lambda2;
@@ -24,37 +25,6 @@ public class EM_s extends EM {
 		this.lambda2 = lambda2;
 		this.lambda4 = lambda4;
 		this.sim = sim;
-	}
-	
-	public EM_s(String path, String path_res, int num_topics, Corpus corpus, double beta, double lambda2, double lambda4) {
-		super(path, path_res, num_topics, corpus, beta);
-		this.lambda2 = lambda2;
-		this.lambda4 = lambda4;
-		if(sim == null)
-			this.sim = init_sim(new File(path, "sim_matrix").getAbsolutePath());
-	}
-	
-	public double[][] init_sim(String path)
-	{
-		int size = corpus.voc.size();
-		double[][] sim = new double[size][size];
-		for(int i = 0; i < size; i++)
-		{
-			if(i % 100 == 0)
-				System.out.println("word: " + i);
-			String text = "";
-			try {
-				text = FileUtils.readFileToString(new File(path, i + ""));
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-			String[] values = text.split(" ");
-			for(int j = 0; j < size; j++)
-			{
-				sim[i][j] = Double.parseDouble(values[j]);
-			}
-		}
-		return sim;
 	}
 
 	@Override
@@ -86,6 +56,7 @@ public class EM_s extends EM {
 		    double[][] sumadj2 = new double[doc.length][model.num_topics];
 		    double exp_ec = 0;  //expectation of coherent edges;
 		    double exp_ec2 = 0;  //expectation of coherent edges with distance 2;
+
 	    	for(int n = 0; n < doc.length; n++)
 	    	{
 	    		for(int k = 0; k < model.num_topics; k++)
@@ -97,13 +68,9 @@ public class EM_s extends EM {
 //	    				System.out.println(list.toString());
 		    			for(int adj_id = 0; adj_id < list.size(); adj_id++)
 		    			{
-		    				double similarity = sim[doc.ids[n]][list.get(adj_id)];
-		    				if(similarity > 0)
-		    				{
-								sumadj[n][k] += doc.counts[n] * Math.log(oldphi[doc.idToIndex.get(list.get(adj_id))][k]);
-								exp_ec += oldphi[n][k] * oldphi[doc.idToIndex.get(list.get(adj_id))][k];
-		    				}
-							
+		    				double similarity = (sim[doc.ids[n]][list.get(adj_id)] + 1)/2.0;
+							sumadj[n][k] += oldphi[doc.idToIndex.get(list.get(adj_id))][k]*similarity;
+							exp_ec += oldphi[n][k] * oldphi[doc.idToIndex.get(list.get(adj_id))][k]*similarity;
 		    			}
 	    			}
 	    			if(doc.adj2.containsKey(doc.ids[n]))
@@ -112,13 +79,9 @@ public class EM_s extends EM {
 //	    				System.out.println(list.toString());
 		    			for(int adj_id = 0; adj_id < list.size(); adj_id++)
 		    			{
-		    				double similarity = sim[doc.ids[n]][list.get(adj_id)];
-		    				if(similarity > 0)
-		    				{
-								sumadj2[n][k] += doc.counts[n] * Math.log(oldphi[doc.idToIndex.get(list.get(adj_id))][k]);
-								exp_ec2 += oldphi[n][k] * oldphi[doc.idToIndex.get(list.get(adj_id))][k];
-		    				}
-							
+		    				double similarity = (sim[doc.ids[n]][list.get(adj_id)] + 1)/2.0;
+							sumadj2[n][k] += doc.counts[n] * oldphi[doc.idToIndex.get(list.get(adj_id))][k]*similarity;
+							exp_ec2 += oldphi[n][k] * oldphi[doc.idToIndex.get(list.get(adj_id))][k]*similarity;
 		    			}
 	    			}
 	    		}
@@ -135,11 +98,9 @@ public class EM_s extends EM {
 	    	}
 	    	doc.exp_theta_square = exp_theta_square/(sum_gamma*(sum_gamma + 1));
 	    	
-	    	doc.zeta1 = Math.log((1 - lambda2)*doc.exp_ec + lambda2 * doc.num_e * doc.exp_ec + 
-	    			(1 - lambda4)*doc.exp_ec2 + lambda4 * doc.num_e2 * doc.exp_ec2);
-	    	doc.zeta1 = doc.zeta1 >= 1?doc.zeta1:1;
-	    	doc.zeta2 = Math.log((doc.num_e + doc.num_e2) * doc.exp_ec * doc.exp_ec2);
-	    	doc.zeta2 = doc.zeta2 >= 1? doc.zeta2:1;
+	    	doc.zeta1 = (1 - lambda2)*doc.exp_ec + lambda2 * doc.num_e * doc.exp_theta_square + 
+	    			(1 - lambda4)*doc.exp_ec2 + lambda4 * doc.num_e2 * doc.exp_theta_square;
+	    	doc.zeta2 = (doc.num_e + doc.num_e2) * doc.exp_theta_square;
 	    	
 	    	for(int n = 0; n < doc.length; n++)
 	    	{
@@ -149,8 +110,8 @@ public class EM_s extends EM {
 	    			//phi = beta * exp(digamma(gamma) + (1-lambda2)/zeta1 * sum(phi(m, i)))  m is adj of n 
 	    			//-> log phi = log (beta) + digamma(gamma) + (1-lambda2)/zeta1 * sum(phi(m, i))
 	    			doc.phi[n][k] = model.log_prob_w[k][doc.ids[n]] + digamma_gam[k] + 
-	    					((1 - lambda2)/doc.zeta1)*Math.exp(sumadj[n][k]) +
-	    					((1 - lambda4)/doc.zeta1)*Math.exp(sumadj2[n][k]);
+	    					((1 - lambda2)/doc.zeta1)*sumadj[n][k] +
+	    					((1 - lambda4)/doc.zeta1)*sumadj2[n][k];
 	    			if (k > 0)
 	                    phisum = Tools.log_sum(phisum, doc.phi[n][k]);
 	                else

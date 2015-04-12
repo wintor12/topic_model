@@ -36,17 +36,17 @@ public class Corpus {
     	num_terms = voc.size();
     	System.out.println("number of terms   :" + num_terms);
     	sb.append("number of terms   :" + num_terms);
-    	sb.append(System.getProperty("line.separator"));
+    	sb.append("\n");
     	
     	List<File> files = Preprocess.listDir(new File(path, "data_words").getAbsolutePath());
     	int num = files.size();
     	System.out.println("number of docs   :" + num);
     	sb.append("number of docs   :" + num);
-    	sb.append(System.getProperty("line.separator"));
+    	sb.append("\n");
     	num_docs = (int) Math.round(files.size()*percentage);
     	System.out.println("number of training docs    :" + num_docs);
     	sb.append("number of training docs    :" + num_docs);
-    	sb.append(System.getProperty("line.separator"));
+    	sb.append("\n");
     	
     	docs = new Document[num_docs];
     	int i = 0;
@@ -74,7 +74,7 @@ public class Corpus {
 		num_docs_test = num - num_docs;
 		System.out.println("number of test docs    :" + num_docs_test);
 		sb.append("number of testing docs    :" + num_docs_test);
-    	sb.append(System.getProperty("line.separator"));
+    	sb.append("\n");
     	docs_test = new Document[num_docs_test];
 		System.out.println("=======process test set========");
 		int j = 0;

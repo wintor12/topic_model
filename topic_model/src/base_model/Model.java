@@ -101,7 +101,7 @@ public class Model {
 //	        	sb.append(df.format(Math.exp(this.log_prob_w[k][w])) + " ");
 	        	sb.append(Math.exp(this.log_prob_w[k][w]) + " ");
 	        }
-	        sb.append(System.getProperty("line.separator"));
+	        sb.append("\n");
         }
 		try {
 			FileUtils.writeStringToFile(new File(filename + "_beta"), sb.toString());
@@ -111,11 +111,11 @@ public class Model {
 		
 		StringBuilder sb2 = new StringBuilder();
 		sb2.append("num_topics: " + this.num_topics);
-		sb2.append(System.getProperty("line.separator"));
+		sb2.append("\n");
 		sb2.append("num_terms: " + this.num_terms);
-		sb2.append(System.getProperty("line.separator"));
+		sb2.append("\n");
 		sb2.append("alpha: " + df.format(this.alpha));
-		sb2.append(System.getProperty("line.separator"));
+		sb2.append("\n");
 		try {
 			FileUtils.writeStringToFile(new File(filename + "_other"), sb2.toString());
 		} catch (IOException e) {

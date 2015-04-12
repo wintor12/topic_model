@@ -259,7 +259,8 @@ public class EM {
 		//Save top words of each topic among corpus
 		int[][] topwords = save_top_words_corpus(20, model, new File(path_res, "top_words_corpus"));
 		//Evaluation
-		computePerplexity(model);
+		computePerplexity_e_theta(model);
+//		computePerplexity_lowerbound(model);
 //		computePerplexity_gibbs(model, topwords);
 //		computePerplexity_gibbs(model);
 //		computePerplexity_old(model);
@@ -277,7 +278,7 @@ public class EM {
         	{       		
         		sb_gamma.append("\t" + df.format(corpus.docs[d].gamma[k]));
         	}
-        	sb_gamma.append(System.getProperty("line.separator"));
+        	sb_gamma.append("\n");
         }
         try {
 			FileUtils.writeStringToFile(file, sb_gamma.toString());
@@ -342,7 +343,7 @@ public class EM {
 			{
 				sb.append(String.format("%-15s" , res[i][k]));
 			}
-			sb.append(System.getProperty("line.separator"));
+			sb.append("\n");
 			
 		}
 		try {
@@ -386,7 +387,7 @@ public class EM {
 			{
 				sb.append(String.format("%-15s" , res[i][k]));
 			}
-			sb.append(System.getProperty("line.separator"));
+			sb.append("\n");
 			
 		}
 		try {
@@ -462,12 +463,66 @@ public class EM {
 		}
 	}
 	
+	public void computePerplexity_e_theta(Model model)
+	{
+		System.out.println("========evaluate========");
+		double perplex = 0;
+		int N = 0;
+		StringBuilder sb = new StringBuilder();
+		for(int m = 0; m < corpus.docs_test.length; m++)
+		{
+			Document doc = corpus.docs_test[m];
+			//Initialize gamma and phi to zero for each document
+			corpus.docs_test[m].gamma = new double[model.num_topics];
+			corpus.docs_test[m].phi = new double[corpus.maxLength()][num_topics];
+			lda_inference(doc, model);
+			double[] theta = new double[num_topics];
+			double theta_sum = 0;
+			for(int k = 0; k < num_topics; k++)
+			{
+				theta[k] = doc.gamma[k];
+				theta_sum += theta[k];
+			}
+			for(int k = 0; k < num_topics; k++)
+			{
+				theta[k] = theta[k]/theta_sum;
+			}
+			double log_p_w = 0;
+			for(int n = 0; n < doc.length; n++)
+			{
+				double betaTtheta = 0;
+				for(int k = 0; k < num_topics; k++)
+				{
+					betaTtheta += Math.exp(model.log_prob_w[k][doc.ids[n]])*theta[k];
+				}
+				log_p_w += doc.counts[n]*Math.log(betaTtheta);
+				
+			}
+			N += doc.total;
+			perplex += log_p_w;
+		}
+		perplex = Math.exp(-(perplex/N));
+		perplex = Math.floor(perplex);
+		System.out.println(perplex);
+		sb.append("Perplexity: " + perplex);
+		try {
+			File eval = new File(path_res, "eval"); 
+			File all_eval = new File(path, "eval");
+			String s = path_res + " : " + perplex + "\n";
+			FileUtils.writeStringToFile(eval, sb.toString());
+			FileUtils.writeStringToFile(all_eval, s, true);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	
 	/**
 	 * Use E step in variational inference to compute the log likelihood of word sequence in test set
 	 * Based on the fact L(gamma, phi; alpha, beta) is the lower bound of log P(w | alpha, beta) 
 	 * @param model  contains beta and alpha learned from training set
 	 */
-	public void computePerplexity(Model model)
+	public void computePerplexity_lowerbound(Model model)
 	{
 		System.out.println("========evaluate========");
 		double perplex = 0;
@@ -483,7 +538,7 @@ public class EM {
 			N += doc.total;
 			perplex += log_p_w;
 			sb.append(log_p_w);
-			sb.append(System.getProperty("line.separator"));
+			sb.append("\n");
 		}
 		perplex = Math.exp(-(perplex/N));
 		perplex = Math.floor(perplex);
@@ -492,7 +547,7 @@ public class EM {
 		try {
 			File eval = new File(path_res, "eval"); 
 			File all_eval = new File(path, "eval");
-			String s = path_res + " : " + perplex + System.getProperty("line.separator");
+			String s = path_res + " : " + perplex + "\n";
 			FileUtils.writeStringToFile(eval, sb.toString());
 			FileUtils.writeStringToFile(all_eval, s, true);
 		} catch (IOException e) {
@@ -555,7 +610,7 @@ public class EM {
 		try {
 			File eval = new File(path_res, "eval"); 
 			File all_eval = new File(path, "eval");
-			String s = path_res + " : " + perplex + System.getProperty("line.separator");
+			String s = path_res + " : " + perplex + "\n";
 			FileUtils.writeStringToFile(eval, sb.toString());
 			FileUtils.writeStringToFile(all_eval, s, true);
 		} catch (IOException e) {
@@ -603,7 +658,7 @@ public class EM {
 		try {
 			File eval = new File(path_res, "eval"); 
 			File all_eval = new File(path, "eval");
-			String s = path_res + " : " + perplex + System.getProperty("line.separator");
+			String s = path_res + " : " + perplex + "\n";
 			FileUtils.writeStringToFile(eval, sb.toString());
 			FileUtils.writeStringToFile(all_eval, s, true);
 		} catch (IOException e) {
@@ -653,7 +708,7 @@ public class EM {
 			File eval = new File(path_res, "eval"); 
 			File all_eval = new File(path, "eval");
 			FileUtils.writeStringToFile(eval, sb.toString());
-			String s = path_res + " : " + perplex + System.getProperty("line.separator");
+			String s = path_res + " : " + perplex + "\n";
 			FileUtils.writeStringToFile(all_eval, s, true);
 		} catch (IOException e) {
 			e.printStackTrace();

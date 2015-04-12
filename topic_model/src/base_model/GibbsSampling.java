@@ -281,7 +281,7 @@ public class GibbsSampling {
 			{
 				sb.append(phi[k][v] + "\t");
 			}
-			sb.append(System.getProperty("line.separator"));
+			sb.append("\n");
 		}
 		try {
 			FileUtils.writeStringToFile(new File(path_phi), sb.toString());
@@ -323,7 +323,7 @@ public class GibbsSampling {
 			{
 				sb.append(String.format("%-15s" , res[i][k]));
 			}
-			sb.append(System.getProperty("line.separator"));
+			sb.append("\n");
 			
 		}
 		try {
@@ -371,7 +371,7 @@ public class GibbsSampling {
 			String path_res = new File(path, "res_" + num_topics).getAbsolutePath();
 			File eval = new File(path_res, "gibbs_eval"); 
 			File all_eval = new File(path, "gibbs_eval");
-			String s = path_res + " : " + perplex + System.getProperty("line.separator");
+			String s = path_res + " : " + perplex + "\n";
 			FileUtils.writeStringToFile(eval, sb.toString());
 			FileUtils.writeStringToFile(all_eval, s, true);
 		} catch (IOException e) {
@@ -426,7 +426,7 @@ public class GibbsSampling {
 			String path_res = new File(path, "res_" + num_topics).getAbsolutePath();
 			File eval = new File(path_res, "gibbs_eval"); 
 			File all_eval = new File(path, "gibbs_eval");
-			String s = path_res + " : " + perplex + System.getProperty("line.separator");
+			String s = path_res + " : " + perplex + "\n";
 			FileUtils.writeStringToFile(eval, sb.toString());
 			FileUtils.writeStringToFile(all_eval, s, true);
 		} catch (IOException e) {
