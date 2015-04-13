@@ -33,10 +33,10 @@ public class Vocabulary {
 	 * @param path         the bag of words document path, in data_words folder 
 	 * @param min_count    remove any word which counts less than min_count
 	 */
-	public void getVocabulary(String path, int min_count)
+	public void getVocabulary(String path, int min_count, int max_count)
 	{
-		File voc_file = new File(path, "idAndWord" + "_" + min_count);
-		File count_file = new File(path, "idAndWord" + "_" + min_count + "count");
+		File voc_file = new File(path, "idAndWord" + "_" + min_count + "_" + max_count);
+		File count_file = new File(path, "idAndWord" + "_" + min_count + "_" + max_count + "_count");
 		if(voc_file.exists())  //If vocabulary file already exists, read voc from file
 		{
 			String text = "";
@@ -103,7 +103,7 @@ public class Vocabulary {
 			{
 	    		int count = entry.getValue();
 	    		String word = entry.getKey();
-	    		if(count < min_count)
+	    		if(count < min_count || count > max_count)
 	    		{
 	    			wordCount.remove(word);    			
 	    		}
@@ -114,7 +114,7 @@ public class Vocabulary {
 	    			id++;
 	    		}
 			}
-	    	printToFile(new File(path, "idAndWord" + "_" + min_count).getAbsolutePath());
+	    	printToFile(new File(path, "idAndWord" + "_" + min_count + "_" + max_count).getAbsolutePath());
 		}
 	}
 
@@ -142,7 +142,7 @@ public class Vocabulary {
 			sb.append("\n");
 		}
 		try {
-			FileUtils.writeStringToFile(new File(filepath + "count"), sb.toString());
+			FileUtils.writeStringToFile(new File(filepath + "_count"), sb.toString());
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

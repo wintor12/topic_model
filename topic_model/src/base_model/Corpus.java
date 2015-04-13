@@ -26,13 +26,13 @@ public class Corpus {
      * @param percentage       the percentage of training data
      * @param type             "LDA", "GTRF", "MGTRF"
      */
-    public Corpus(String path, int min_count, double percentage, String type)
+    public Corpus(String path, int min_count, int max_count, double percentage, String type)
     {
     	StringBuilder sb = new StringBuilder();
     	this.path = path;
     	// Iterate all files and get vocabulary, word id maps.
     	voc = new Vocabulary();
-    	voc.getVocabulary(path, min_count);
+    	voc.getVocabulary(path, min_count, max_count);
     	num_terms = voc.size();
     	System.out.println("number of terms   :" + num_terms);
     	sb.append("number of terms   :" + num_terms);

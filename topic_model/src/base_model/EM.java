@@ -137,7 +137,7 @@ public class EM {
 		//Save top words of each topic among corpus
 		int[][] topwords = save_top_words_corpus(20, model, new File(path_res, "top_words_corpus"));
 		//Evaluation
-//		computePerplexity_e_theta(model);
+		computePerplexity_e_theta(model);
 //		computePerplexity_lowerbound(model);
 //		computePerplexity_gibbs(model, topwords);
 //		computePerplexity_gibbs(model);
