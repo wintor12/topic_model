@@ -7,6 +7,7 @@ import java.util.Arrays;
 
 
 
+
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.math3.special.Gamma;
 
@@ -50,6 +51,99 @@ public class EM {
 		this.path = path;
 		this.corpus = corpus;
 		this.beta = beta;
+	}
+	
+	public void run_em(String type)
+	{ 
+		String path_model = new File(path_res, "model").getAbsolutePath();
+		
+		Model model = new Model(num_topics, corpus.num_terms, alpha);
+		Suffstats ss = new Suffstats(model, corpus, beta);
+		//Random initialize joint probability of p(w, k), and compute p(k) by sum over p(w, k)
+//		ss.random_initialize_ss();
+		ss.gibbs_initialize_ss();
+		model.mle(ss, true); //get initial beta
+		
+		model.save_lda_model(new File(path_model, "init").getAbsolutePath());		
+		
+		//run EM 		
+		double likelihood, likelihood_old = 0, converged = 1;
+		int i = 0;
+		StringBuilder sb = new StringBuilder(); //output likelihood and converged
+		while(((converged < 0) || (converged > EM_CONVERGED) || (i <= 2)) && (i <= EM_MAX_ITER))
+		{
+			i++;
+			System.out.println("**** em iteration " + i + "****");
+			likelihood = 0;
+			ss.beta_initialize_ss();
+//			ss.zero_initialize_ss();
+			//E step
+			for(int d = 0; d < corpus.num_docs; d++)
+			{
+				if(d%100 == 0)
+					System.out.println("document " + d);
+				
+				//Initialize gamma and phi to zero for each document
+				corpus.docs[d].gamma = new double[model.num_topics];
+				corpus.docs[d].phi = new double[corpus.maxLength()][num_topics];
+				
+				//Compute gamma, phi of each document, and update ss
+				//Sum up likelihood of each document
+				likelihood += doc_e_step(corpus.docs[d], model, ss); 
+			}
+
+			// M step
+			//Update Model.beta and Model.alpha using ss
+			model.mle(ss, false);
+			
+			// check for convergence
+	        converged = (likelihood_old - likelihood) / likelihood_old;
+	        if (converged < 0) 
+	        	VAR_MAX_ITER = VAR_MAX_ITER * 2;
+	        likelihood_old = likelihood;
+	        	        
+	        
+	        // output model, likelihood and gamma
+	        sb.append(likelihood +"\t" + converged + "\n");
+	        model.save_lda_model(new File(path_model, i + "").getAbsolutePath());
+	        save_gamma(model, new File(path_model, i + "_gamma"));
+	        if(type.equals("GTRF"))
+	        	save_doc_para(new File(path_model, i + "_doc"));
+	        if(type.equals("MGTRF"))
+				save_doc_para2(new File(path_model, i + "_doc"));
+		}		
+		File likelihood_file = new File(path_res, "likelihood");
+		try {
+			FileUtils.writeStringToFile(likelihood_file, sb.toString());
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		//output the final model
+		model.save_lda_model(new File(path_res, "final").getAbsolutePath());
+		save_gamma(model, new File(path_res, "final_gamma"));
+		if(type.equals("GTRF"))
+			save_doc_para(new File(path_res, "final_doc"));
+		if(type.equals("MGTRF"))
+			save_doc_para2(new File(path_res, "final_doc"));
+		
+		for(int d = 0; d < corpus.num_docs; d++)
+		{
+			if(d%100 == 0)
+				System.out.println("final e step document " + d);
+			lda_inference(corpus.docs[d], model);
+		}
+		
+		//Save top words of each topic among corpus
+		int[][] topwords = save_top_words_corpus(20, model, new File(path_res, "top_words_corpus"));
+		//Evaluation
+//		computePerplexity_e_theta(model);
+//		computePerplexity_lowerbound(model);
+//		computePerplexity_gibbs(model, topwords);
+//		computePerplexity_gibbs(model);
+//		computePerplexity_old(model);
+		
+		pred_dist(model, 0.8);
 	}
 	
 	public double doc_e_step(Document doc, Model model, Suffstats ss)
@@ -169,102 +263,7 @@ public class EM {
 	    return likelihood;
 	}
 	
-	public void run_em(String type)
-	{ 
-		String path_model = new File(path_res, "model").getAbsolutePath();
-		
-		Model model = new Model(num_topics, corpus.num_terms, alpha);
-		Suffstats ss = new Suffstats(model, corpus, beta);
-		//Random initialize joint probability of p(w, k), and compute p(k) by sum over p(w, k)
-//		ss.random_initialize_ss();
-		ss.gibbs_initialize_ss();
-		model.mle(ss, true); //get initial beta
-		
-		model.save_lda_model(new File(path_model, "init").getAbsolutePath());		
-		
-		//run EM 		
-		double likelihood, likelihood_old = 0, converged = 1;
-		int i = 0;
-		StringBuilder sb = new StringBuilder(); //output likelihood and converged
-		while(((converged < 0) || (converged > EM_CONVERGED) || (i <= 2)) && (i <= EM_MAX_ITER))
-		{
-			i++;
-			System.out.println("**** em iteration " + i + "****");
-			likelihood = 0;
-			ss.beta_initialize_ss();
-//			ss.zero_initialize_ss();
-			//E step
-			for(int d = 0; d < corpus.num_docs; d++)
-			{
-				if(d%100 == 0)
-					System.out.println("document " + d);
-				
-				//Initialize gamma and phi to zero for each document
-				corpus.docs[d].gamma = new double[model.num_topics];
-				corpus.docs[d].phi = new double[corpus.maxLength()][num_topics];
-				
-				//Compute gamma, phi of each document, and update ss
-				//Sum up likelihood of each document
-				likelihood += doc_e_step(corpus.docs[d], model, ss); 
-			}
-
-			// M step
-			//Update Model.beta and Model.alpha using ss
-			model.mle(ss, false);
-			
-			// check for convergence
-	        converged = (likelihood_old - likelihood) / likelihood_old;
-	        if (converged < 0) 
-	        	VAR_MAX_ITER = VAR_MAX_ITER * 2;
-	        likelihood_old = likelihood;
-	        	        
-	        
-	        // output model, likelihood and gamma
-	        sb.append(likelihood +"\t" + converged + "\n");
-	        model.save_lda_model(new File(path_model, i + "").getAbsolutePath());
-	        save_gamma(model, new File(path_model, i + "_gamma"));
-	        if(type.equals("GTRF"))
-	        	save_doc_para(new File(path_model, i + "_doc"));
-	        if(type.equals("MGTRF"))
-				save_doc_para2(new File(path_model, i + "_doc"));
-		}		
-		File likelihood_file = new File(path_res, "likelihood");
-		try {
-			FileUtils.writeStringToFile(likelihood_file, sb.toString());
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		
-		//output the final model
-		model.save_lda_model(new File(path_res, "final").getAbsolutePath());
-		save_gamma(model, new File(path_res, "final_gamma"));
-		if(type.equals("GTRF"))
-			save_doc_para(new File(path_res, "final_doc"));
-		if(type.equals("MGTRF"))
-			save_doc_para2(new File(path_res, "final_doc"));
-		
-		// output the word assignments (for visualization) and top words for each document
-		
-//		String path_post = new File(path_res, "word_topic_post").getAbsolutePath();
-//		String path_topwords = new File(path_res, "top_words").getAbsolutePath();
-		for(int d = 0; d < corpus.num_docs; d++)
-		{
-			if(d%100 == 0)
-				System.out.println("final e step document " + d);
-			lda_inference(corpus.docs[d], model);
-//			save_word_assignment(corpus.docs[d], new File(path_post, corpus.docs[d].doc_name));
-//			save_top_words(10, corpus.docs[d], new File(path_topwords, corpus.docs[d].doc_name));
-		}
-		
-		//Save top words of each topic among corpus
-		int[][] topwords = save_top_words_corpus(20, model, new File(path_res, "top_words_corpus"));
-		//Evaluation
-		computePerplexity_e_theta(model);
-//		computePerplexity_lowerbound(model);
-//		computePerplexity_gibbs(model, topwords);
-//		computePerplexity_gibbs(model);
-//		computePerplexity_old(model);
-	}
+	
 	
 
 	public void save_gamma(Model model, File file)
@@ -287,71 +286,6 @@ public class EM {
 		}
 	}
 	
-	public void save_word_assignment(Document doc, File file)
-	{
-		StringBuilder sb = new StringBuilder();
-		int K = doc.gamma.length;  //topics
-		int N = doc.length;  
-		for(int n = 0; n < N; n++)
-		{
-			String word = corpus.voc.idToWord.get(doc.ids[n]);
-			sb.append(word);
-			for(int k = 0; k < K; k++)
-			{
-				sb.append("\t" + doc.phi[n][k]);
-			}
-			sb.append("\n");
-		}
-		try {
-			FileUtils.writeStringToFile(file, sb.toString());
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
-	
-	/**
-	 * return top M words of a topic in one document from phi
-	 * @param M      top M words
-	 * @param doc
-	 * @param file   output file
-	 */
-	public void save_top_words(int M, Document doc, File file)
-	{				
-		int K = doc.gamma.length;  //topics
-		int N = doc.length; 
-		String[][] res = new String[M][K];
-		for(int k = 0; k < K; k++)
-		{
-			double[] temp = new double[N];
-			for(int n = 0; n < N; n++)
-				temp[n] = doc.phi[n][k];
-			Tools tools = new Tools();
-			ArrayIndexComparator comparator = tools.new ArrayIndexComparator(temp);
-			Integer[] indexes = comparator.createIndexArray();
-			Arrays.sort(indexes, comparator);
-			for(int i = 0; i < M; i++)
-			{
-				if(i == doc.ids.length)
-					break;
-				res[i][k] = corpus.voc.idToWord.get(doc.ids[indexes[i]]);
-			}
-		}
-		StringBuilder sb = new StringBuilder();
-		for(int i = 0; i < M; i++)
-		{
-			for(int k = 0; k < K; k++)
-			{
-				sb.append(String.format("%-15s" , res[i][k]));
-			}
-			sb.append("\n");
-			
-		}
-		try {
-			FileUtils.writeStringToFile(file, sb.toString());
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
 	
 	/**
 	 * Save top words of each topic from whole corpus using Beta matrix
@@ -666,55 +600,164 @@ public class EM {
 		}
 	}
 	
-	public void computePerplexity_old(Model model)
+	public void pred_dist(Model model, double percentage)
 	{
-		System.out.println("========evaluate========");
-		double perplex = 0;
-		int N = 0;
+		System.out.println("========evaluate predictive distribution========");
+		double sum_pred = 0;
 		StringBuilder sb = new StringBuilder();
-		for(Document doc: corpus.docs_test)
+		for(int m = 0; m < corpus.docs_test.length; m++)
 		{
-//			sb.append(doc.doc_name);
-			//assign topic to each word in test set
-			//Compute theta based on the formula of Gibbs sampling
-			doc.assign_topic_to_word(model);
-			
-//			DecimalFormat df = new DecimalFormat("#.##");
-//			for(int k = 0; k < model.num_topics; k++)
-//			{
-//				sb.append("\t" + df.format(doc.theta[k]));
-//			}
-//			sb.append("\n");
-						
-			double log_p_w = 0;
-			for(int n = 0; n < doc.length; n++)
+			Document doc = corpus.docs_test[m];
+			double[] theta = new double[num_topics];
+			double theta_sum = 0;
+			//Initialize gamma and phi to zero for each document
+			doc.gamma = new double[model.num_topics];
+			doc.phi = new double[corpus.maxLength()][num_topics];
+			int num_words_train = (int) Math.round(doc.length*percentage);
+			lda_inference(doc, model, num_words_train);
+			for(int k = 0; k < num_topics; k++)
 			{
-				double betaTtheta = 0;
-				for(int k = 0; k < num_topics; k++)
-				{
-					betaTtheta += Math.exp(model.log_prob_w[k][doc.ids[n]])*doc.theta[k];
-				}
-				log_p_w += doc.counts[n]*Math.log(betaTtheta);
-				
+				theta[k] = Math.log(doc.gamma[k]);
+				if (k > 0)
+                    theta_sum = Tools.log_sum(theta_sum, theta[k]);
+                else
+                	theta_sum = theta[k];
 			}
-			N += doc.total;
-			perplex += log_p_w;
+			double pred = 0;
+			for(int k = 0; k < num_topics; k++)
+			{
+				theta[k] = theta[k] - theta_sum;
+				double beta_k_sum = 0;
+				for(int n = num_words_train; n < doc.length; n++)
+				{
+					if(n == num_words_train)
+						beta_k_sum = model.log_prob_w[k][doc.ids[n]];
+					else
+						beta_k_sum = Tools.log_sum(beta_k_sum, model.log_prob_w[k][doc.ids[n]]);
+				}
+				double beta_k_mean = beta_k_sum - Math.log(doc.length - num_words_train);
+				if(k == 0)
+					pred = theta[k] + beta_k_mean;
+				else
+					pred = Tools.log_sum(pred, theta[k] + beta_k_mean);
+			}
+			sum_pred += pred;
 		}
-		perplex = Math.exp(-(perplex/N));
-		perplex = Math.floor(perplex);
-		System.out.println(perplex);
-		sb.append("Perplexity: " + perplex);
+		double mean_pred = sum_pred/corpus.docs_test.length;
+		System.out.println(mean_pred);
+		sb.append("Pred dist: " + mean_pred);
 		try {
-			File eval = new File(path_res, "eval"); 
-			File all_eval = new File(path, "eval");
+			File eval = new File(path_res, "eval_pred"); 
+			File all_eval = new File(path, "eval_pred");
+			String s = path_res + " : " + mean_pred + "\n";
 			FileUtils.writeStringToFile(eval, sb.toString());
-			String s = path_res + " : " + perplex + "\n";
 			FileUtils.writeStringToFile(all_eval, s, true);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
 	
+	/**
+	 * E step for evaluation method predictive distribution.
+	 * @param doc
+	 * @param model
+	 * @param num_words_train  number of words used for training   w_obs
+	 * @return
+	 */
+	public double lda_inference(Document doc, Model model, int num_words_train)
+	{		
+	    double likelihood = 0, likelihood_old = 0;
+	    double[] digamma_gam = new double[model.num_topics];
+	    
+	    // compute posterior dirichlet
+	    
+	    //initialize varitional parameters gamma and phi
+	    for (int k = 0; k < model.num_topics; k++)
+	    {
+	        doc.gamma[k] = model.alpha + (doc.total/((double) model.num_topics));
+	        //compute digamma gamma for later use
+	        digamma_gam[k] = Gamma.digamma(doc.gamma[k]);
+	        for (int n = 0; n < doc.length; n++)
+	            doc.phi[n][k] = 1.0/model.num_topics;
+	    }
+	    
+	    double converged = 1;
+	    int var_iter = 0;
+	    double[] oldphi = new double[model.num_topics];  //????
+	    while (converged > VAR_CONVERGED && var_iter < VAR_MAX_ITER)
+	    {
+	    	var_iter++;
+//	    	System.out.println("var_iter: " + var_iter);
+	    	for(int n = 0; n < num_words_train; n++)
+	    	{
+	    		double phisum = 0;
+	    		for(int k = 0; k < model.num_topics; k++)
+	    		{
+	    			oldphi[k] = doc.phi[n][k];
+	    			//phi = beta * exp(digamma(gamma)) -> log phi = log (beta) + digamma(gamma)
+	    			doc.phi[n][k] = model.log_prob_w[k][doc.ids[n]] + digamma_gam[k];
+	    			if (k > 0)
+	                    phisum = Tools.log_sum(phisum, doc.phi[n][k]);
+	                else
+	                    phisum = doc.phi[n][k]; // note, phi is in log space
+	    		}	    		
+	    		for (int k = 0; k < model.num_topics; k++)
+	            {
+	    			//Normalize phi, exp(log phi - log phisum) = phi/phisum
+	                doc.phi[n][k] = Math.exp(doc.phi[n][k] - phisum);
+	                doc.gamma[k] += doc.counts[n]*(doc.phi[n][k] - oldphi[k]);
+	                digamma_gam[k] = Gamma.digamma(doc.gamma[k]);
+	            }
+
+	    	}
+	    	likelihood = compute_likelihood(doc, model);
+//		    System.out.println("likelihood: " + likelihood);		    
+		    converged = (likelihood_old - likelihood) / likelihood_old;
+//		    System.out.println(converged);
+	        likelihood_old = likelihood;
+	    }
+	    
+	    return likelihood;
+	}
 	
+	/**
+	 * compute likelihood of num_words_train words in a document, in the evaluation method predictive distribution
+	 * @param doc
+	 * @param model
+	 * @param num_words_train
+	 * @return
+	 */
+	public double compute_likelihood(Document doc, Model model, int num_words_train)
+	{
+		double likelihood = 0, gamma_sum = 0, digamma_sum = 0;
+	    double[] digamma_gam = new double[model.num_topics];
+	    for(int k = 0; k < model.num_topics; k++)
+	    {
+	    	digamma_gam[k] = Gamma.digamma(doc.gamma[k]);
+	    	gamma_sum += doc.gamma[k];
+	    }
+	    digamma_sum = Gamma.digamma(gamma_sum);
+	    likelihood = Gamma.logGamma(model.alpha * model.num_topics) 
+	    		- model.num_topics * Gamma.logGamma(model.alpha) 
+	    		- Gamma.logGamma(gamma_sum);
+	    
+	    for(int k = 0; k < model.num_topics; k++)
+	    {
+	    	likelihood += (model.alpha - 1) * (digamma_gam[k] - digamma_sum) 
+	    			+ Gamma.logGamma(doc.gamma[k]) 
+	    			- (doc.gamma[k] - 1) * (digamma_gam[k] - digamma_sum);
+	    	for(int n = 0; n < num_words_train; n++)
+		    {
+		    	if(doc.phi[n][k] > 0)
+		    	{
+		    		likelihood += doc.counts[n] * (doc.phi[n][k] * 
+		    				((digamma_gam[k] - digamma_sum) - 
+		    				Math.log(doc.phi[n][k]) +
+		    				model.log_prob_w[k][doc.ids[n]]));
+		    	}
+		    }
+	    }	    
+	    return likelihood;
+	}
 
 }

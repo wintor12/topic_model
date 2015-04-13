@@ -32,9 +32,6 @@ public class Document {
     public int num_e2;  //total number of edges with distance 2
     public double exp_theta_square;
     
-    public int[] word_topic;   
-    public double[] theta;
-    
     public double[] gamma;  //variational dirichlet parameter, K dimension  initialized when run EM
     public double[][] phi; //variational multinomial, corpus.maxLength() * K dimension
     
@@ -50,8 +47,7 @@ public class Document {
     	adj = new TreeMap<Integer, List<Integer>>();
     	adj2 = new TreeMap<Integer, List<Integer>>();
     }
-    
-    
+        
     
     /**
      * format to  word: count and initialize each doc object, set word count map, set words, ids, counts array
@@ -160,33 +156,6 @@ public class Document {
     	num_e2 = num_e2/2;
     	
     }
-    
-    //Assign topic to each word based on beta
-    //Compute theta according to the counts of each topic
-    public void assign_topic_to_word(Model model)
-    {
-    	word_topic = new int[ids.length];
-    	theta = new double[model.num_topics];
-    	for(int n = 0; n < word_topic.length; n++)
-    	{
-    		double max = model.log_prob_w[0][ids[n]];
-    		int max_k = 0;
-    		for(int k = 1; k < model.num_topics; k++)
-    		{
-				if(model.log_prob_w[k][ids[n]] > max)
-				{
-					max = model.log_prob_w[k][ids[n]];
-					max_k = k;
-				}
-    		}
-    		word_topic[n] = max_k;
-    		theta[max_k] += counts[n];
-    	}
-    	 //Compute theta for a document
-    	for(int k = 0; k < model.num_topics; k++)
-    	{
-    		theta[k] = (double)(theta[k] + model.alpha)/(total + model.num_topics * model.alpha);
-    	}
-    }
+
 
 }

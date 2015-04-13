@@ -24,8 +24,8 @@ public class Test {
 //    //The stop words folder
 //	public static String stopwords_path = "C:\\Exp\\lda\\stopwords2.txt";
 
-	public static String run_path = "/Users/tongwang/Desktop/exp/lda/20news_test14/";  
-	public static String data_path = "/Users/tongwang/Desktop/exp/lda/20news_test14/data/";
+	public static String run_path = "/Users/tongwang/Desktop/exp/lda/20news_test16/";  
+	public static String data_path = "/Users/tongwang/Desktop/exp/lda/20news_test16/data/";
 //	public static String run_path = "/Users/tongwang/Desktop/exp/lda/20news/";  
 //	public static String data_path = "/Users/tongwang/Desktop/exp/lda/20news/data/";
 	public static String stopwords_path = "/Users/tongwang/Desktop/exp/lda/20news_test/stopwords2.txt";
@@ -64,15 +64,15 @@ public class Test {
 		
 				
 //		for(int i = 0; i < ks.length; i++){
-			Corpus corpus2 = new Corpus(run_path, min_count, train_percentage, "GTRF");
-			String path_res2 = new File(run_path, "res_" + 30 + "_" + lambda2).getAbsolutePath();
-			EM_g em2 = new EM_g(run_path, path_res2, 30, corpus2, beta, lambda2);
-			em2.run_em("GTRF");	
-			
-			Corpus corpus3 = new Corpus(run_path, min_count, train_percentage, "MGTRF");
-			String path_res3 = new File(run_path, "res_" + 30 + "_" + lambda2 + "_" + lambda4).getAbsolutePath();
-			EM_m em3 = new EM_m(run_path, path_res3, 30, corpus3, beta, lambda2, lambda4);
-			em3.run_em("MGTRF");
+//			Corpus corpus2 = new Corpus(run_path, min_count, train_percentage, "GTRF");
+//			String path_res2 = new File(run_path, "res_" + ks[i] + "_" + lambda2).getAbsolutePath();
+//			EM_g em2 = new EM_g(run_path, path_res2, ks[i], corpus2, beta, lambda2);
+//			em2.run_em("GTRF");	
+//			
+//			Corpus corpus3 = new Corpus(run_path, min_count, train_percentage, "MGTRF");
+//			String path_res3 = new File(run_path, "res_" + ks[i] + "_" + lambda2 + "_" + lambda4).getAbsolutePath();
+//			EM_m em3 = new EM_m(run_path, path_res3, ks[i], corpus3, beta, lambda2, lambda4);
+//			em3.run_em("MGTRF");
 //		}
 		
 //		Corpus corpus = new Corpus(run_path, min_count, train_percentage, "MGTRF");
@@ -88,19 +88,19 @@ public class Test {
 //			em4.run_em("MGTRF");
 //		}
 		
-//		Corpus corpus = new Corpus(run_path, min_count, train_percentage, "MGTRF");
-//		double[][] sim = init_sim(new File(run_path, "sim_matrix").getAbsolutePath(), corpus);
-//		for(int i = 0; i < ks.length; i++){			
-//			Corpus corpus5 = new Corpus(run_path, min_count, train_percentage, "GTRF");
-//			String path_res5 = new File(run_path, "res_" + ks[i] + "_" + lambda2).getAbsolutePath();
-//			EM_s4 em2 = new EM_s4(run_path, path_res5, ks[i], corpus5, beta, lambda2, sim);
-//			em2.run_em("GTRF");
-//			
-//			Corpus corpus4 = new Corpus(run_path, min_count, train_percentage, "MGTRF");
-//			String path_res4 = new File(run_path, "res_" + ks[i] + "_" + lambda2 + "_" + lambda4).getAbsolutePath();
-//			EM_s3 em4 = new EM_s3(run_path, path_res4, ks[i], corpus4, beta, lambda2, lambda4, sim);
-//			em4.run_em("MGTRF");
-//		}
+		Corpus corpus = new Corpus(run_path, min_count, train_percentage, "MGTRF");
+		double[][] sim = init_sim(new File(run_path, "sim_matrix").getAbsolutePath(), corpus);
+		for(int i = 0; i < ks.length; i++){			
+			Corpus corpus5 = new Corpus(run_path, min_count, train_percentage, "GTRF");
+			String path_res5 = new File(run_path, "res_" + ks[i] + "_" + lambda2).getAbsolutePath();
+			EM_s4 em2 = new EM_s4(run_path, path_res5, ks[i], corpus5, beta, lambda2, sim);
+			em2.run_em("GTRF");
+			
+			Corpus corpus4 = new Corpus(run_path, min_count, train_percentage, "MGTRF");
+			String path_res4 = new File(run_path, "res_" + ks[i] + "_" + lambda2 + "_" + lambda4).getAbsolutePath();
+			EM_s3 em4 = new EM_s3(run_path, path_res4, ks[i], corpus4, beta, lambda2, lambda4, sim);
+			em4.run_em("MGTRF");
+		}
 	}
 	
 	public static double[][] init_sim(String path, Corpus corpus)
