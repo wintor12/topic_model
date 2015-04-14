@@ -103,7 +103,7 @@ public class EM_s2 extends EM{
 	                doc.phi[n][k] = Math.exp(doc.phi[n][k] - phisum);
 	                doc.gamma[k] += doc.counts[n]*(doc.phi[n][k] - oldphi[n][k]);
 //	                doc.gamma[k] += doc.counts[n]*doc.phi[n][k];
-	                digamma_gam[k] = Gamma.digamma(doc.gamma[k]);
+	                digamma_gam[k] = doc.gamma[k] > 0? Gamma.digamma(doc.gamma[k]):Gamma.digamma(0.1);
 	            }
 //	    		for (int k = 0; k < model.num_topics; k++)
 //	    		{

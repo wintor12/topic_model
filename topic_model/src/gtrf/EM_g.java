@@ -112,16 +112,13 @@ public class EM_g extends EM{
 	            {
 	    			//Normalize phi, exp(log phi - log phisum) = phi/phisum
 	                doc.phi[n][k] = Math.exp(doc.phi[n][k] - phisum);
-	                doc.gamma[k] += doc.counts[n]*(doc.phi[n][k] - oldphi[n][k]);
+	                doc.gamma[k] += doc.counts[n]*(doc.phi[n][k]-oldphi[n][k]);
 //	                doc.gamma[k] += doc.counts[n]*doc.phi[n][k];
-	                digamma_gam[k] = Gamma.digamma(doc.gamma[k]);
+	                digamma_gam[k] = doc.gamma[k] > 0? Gamma.digamma(doc.gamma[k]):Gamma.digamma(0.1);
 	            }
-//	    		for (int k = 0; k < model.num_topics; k++)
-//	    		{
-//	    			doc.gamma[k] += model.alpha;
-//	    			digamma_gam[k] = Gamma.digamma(doc.gamma[k]);
-//	    		}
+
 	    	}
+
 	    	likelihood = compute_likelihood(doc, model);
 //		    System.out.println("likelihood: " + likelihood);		    
 		    converged = (likelihood_old - likelihood) / likelihood_old;
