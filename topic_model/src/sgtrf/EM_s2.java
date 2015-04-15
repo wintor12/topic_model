@@ -83,8 +83,10 @@ public class EM_s2 extends EM{
 	    	doc.zeta1 = (1 - lambda2)*doc.exp_ec + lambda2 * doc.num_e * doc.exp_theta_square;
 	    	doc.zeta2 = doc.num_e * doc.exp_theta_square;
 
+	    	double[] old_gamma = new double[num_topics];
 	    	for(int k = 0; k < num_topics; k++)
 	    	{
+	    		old_gamma[k] = doc.gamma[k];
 	        	doc.gamma[k] = 0;
 	    	}
 	    	for(int n = 0; n < doc.length; n++)
@@ -114,6 +116,7 @@ public class EM_s2 extends EM{
     		for (int k = 0; k < model.num_topics; k++)
     		{
     			doc.gamma[k] += model.alpha;
+    			doc.gamma[k] = updataGamma(doc.gamma[k], old_gamma[k], sum_gamma, doc.zeta1, doc.zeta2, doc.num_e, model);
     			digamma_gam[k] = Gamma.digamma(doc.gamma[k]);
     		}
 	    	likelihood = compute_likelihood(doc, model);
@@ -124,6 +127,39 @@ public class EM_s2 extends EM{
 	    }
 	    return likelihood;
     }
+	
+	public double updataGamma(double lda_gamma, double old_gamma, double sum_gamma, double zeta1, double zeta2, int num_e, Model model)
+	{
+		double e = 1e-4;
+		int iters = 50;
+		double x0 = lda_gamma;
+		double x1 = 0;
+		int iter = 0;
+		double converged = 1;
+		sum_gamma = sum_gamma - old_gamma + lda_gamma;
+		while(converged > e && iter <= iters)
+		{
+			iter++;
+			
+			double f = (lda_gamma - x0)*(Gamma.trigamma(x0) - Gamma.trigamma(sum_gamma)) - 
+					(((zeta1 - zeta2*lambda2)*num_e)/(zeta1*zeta2)) *
+					(2*x0*Math.pow(sum_gamma,2)+Math.pow(sum_gamma, 2)+sum_gamma - 2*Math.pow(x0, 2)*sum_gamma - Math.pow(x0,2) - x0 )/
+					(Math.pow(sum_gamma, 2)*Math.pow(sum_gamma + 1, 2));
+			if(Math.abs(f) < 0.001)
+				break;
+			double df =(Gamma.trigamma(sum_gamma) - Gamma.trigamma(x0)) + (lda_gamma - x0)*(Tools.tetragamma(x0) - Tools.tetragamma(sum_gamma)) - 
+					(((zeta1 - zeta2*lambda2)*num_e)/(zeta1*zeta2))*
+					((2*Math.pow(sum_gamma, 2) + 2*sum_gamma - 2*Math.pow(x0,2) - 2*x0)*Math.pow(sum_gamma, 2)*Math.pow(sum_gamma + 1, 2) - 
+					(2*x0*Math.pow(sum_gamma,2)+Math.pow(sum_gamma, 2)+sum_gamma - 2*Math.pow(x0, 2)*sum_gamma - Math.pow(x0,2) - x0 ) *
+					(2*sum_gamma*Math.pow(sum_gamma + 1, 2) + 2*Math.pow(sum_gamma, 2)*(sum_gamma + 1)))/
+					(Math.pow(sum_gamma, 4)*Math.pow(sum_gamma + 1, 4));
+			x1 = x0 - f/df;			
+			converged = Math.abs((x1 - x0)/x0);
+			sum_gamma = sum_gamma - x0 + x1;
+			x0 = x1;			 
+		}
+		return x0;
+	}
 
 	@Override
 	public double compute_likelihood(Document doc, Model model) {
@@ -197,8 +233,10 @@ public class EM_s2 extends EM{
 	    	doc.zeta1 = (1 - lambda2)*doc.exp_ec + lambda2 * doc.num_e * doc.exp_theta_square;
 	    	doc.zeta2 = doc.num_e * doc.exp_theta_square;
 
+	    	double[] old_gamma = new double[num_topics];
 	    	for(int k = 0; k < num_topics; k++)
 	    	{
+	    		old_gamma[k] = doc.gamma[k];
 	        	doc.gamma[k] = 0;
 	    	}
 	    	for(int n = 0; n < doc.length; n++)
@@ -228,6 +266,7 @@ public class EM_s2 extends EM{
     		for (int k = 0; k < model.num_topics; k++)
     		{
     			doc.gamma[k] += model.alpha;
+    			doc.gamma[k] = updataGamma(doc.gamma[k], old_gamma[k], sum_gamma, doc.zeta1, doc.zeta2, doc.num_e, model);
     			digamma_gam[k] = Gamma.digamma(doc.gamma[k]);
     		}
 	    	likelihood = compute_likelihood(doc, model);
