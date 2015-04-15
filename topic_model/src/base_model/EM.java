@@ -195,6 +195,10 @@ public class EM {
 	    while (converged > VAR_CONVERGED && var_iter < VAR_MAX_ITER)
 	    {
 	    	var_iter++;
+	    	for(int k = 0; k < num_topics; k++)
+	    	{
+	        	doc.gamma[k] = 0;
+	    	}
 //	    	System.out.println("var_iter: " + var_iter);
 	    	for(int n = 0; n < doc.length; n++)
 	    	{
@@ -213,17 +217,17 @@ public class EM {
 	            {
 	    			//Normalize phi, exp(log phi - log phisum) = phi/phisum
 	                doc.phi[n][k] = Math.exp(doc.phi[n][k] - phisum);
-	                doc.gamma[k] += doc.counts[n]*(doc.phi[n][k] - oldphi[k]);
-//	                doc.gamma[k] += doc.counts[n]*doc.phi[n][k];
-	                digamma_gam[k] = doc.gamma[k] > 0? Gamma.digamma(doc.gamma[k]):Gamma.digamma(0.1);
+//	                doc.gamma[k] += doc.counts[n]*(doc.phi[n][k] - oldphi[k]);
+	                doc.gamma[k] += doc.counts[n]*doc.phi[n][k];
+//	                digamma_gam[k] = doc.gamma[k] > 0? Gamma.digamma(doc.gamma[k]):Gamma.digamma(0.1);
 	            }
 
 	    	}
-//	    	for(int k = 0; k < num_topics; k++)
-//	    	{
-//	    		doc.gamma[k] += alpha;
-//	    		digamma_gam[k] = Gamma.digamma(doc.gamma[k]);
-//	    	}
+	    	for(int k = 0; k < num_topics; k++)
+	    	{
+	    		doc.gamma[k] += model.alpha;
+	    		digamma_gam[k] = Gamma.digamma(doc.gamma[k]);
+	    	}
 	    	likelihood = compute_likelihood(doc, model);
 //		    System.out.println("likelihood: " + likelihood);		    
 		    converged = (likelihood_old - likelihood) / likelihood_old;
@@ -692,6 +696,10 @@ public class EM {
 	    double[] oldphi = new double[model.num_topics];  //????
 	    while (converged > VAR_CONVERGED && var_iter < VAR_MAX_ITER)
 	    {
+	    	for(int k = 0; k < num_topics; k++)
+	    	{
+	        	doc.gamma[k] = 0;
+	    	}
 	    	var_iter++;
 //	    	System.out.println("var_iter: " + var_iter);
 	    	for(int n = 0; n < num_words_train; n++)
@@ -711,11 +719,16 @@ public class EM {
 	            {
 	    			//Normalize phi, exp(log phi - log phisum) = phi/phisum
 	                doc.phi[n][k] = Math.exp(doc.phi[n][k] - phisum);
-	                doc.gamma[k] += doc.counts[n]*(doc.phi[n][k] - oldphi[k]);
-//	                doc.gamma[k] += doc.counts[n]*doc.phi[n][k];
-	                digamma_gam[k] = doc.gamma[k] > 0? Gamma.digamma(doc.gamma[k]):Gamma.digamma(0.1);
+//	                doc.gamma[k] += doc.counts[n]*(doc.phi[n][k] - oldphi[k]);
+	                doc.gamma[k] += doc.counts[n]*doc.phi[n][k];
+//	                digamma_gam[k] = doc.gamma[k] > 0? Gamma.digamma(doc.gamma[k]):Gamma.digamma(0.1);
 	            }
 
+	    	}
+	    	for(int k = 0; k < num_topics; k++)
+	    	{
+	    		doc.gamma[k] += model.alpha;
+	    		digamma_gam[k] = Gamma.digamma(doc.gamma[k]);
 	    	}
 	    	likelihood = compute_likelihood(doc, model);
 //		    System.out.println("likelihood: " + likelihood);		    
