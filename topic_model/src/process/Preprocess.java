@@ -167,9 +167,15 @@ public class Preprocess {
 		Properties props = new Properties();
 		props.put("annotators", "tokenize, ssplit");
 		StanfordCoreNLP pipeline = new StanfordCoreNLP(props);
-		for (File file : listDir(path_documents)) {
+		for (File file : listDir(path_documents)) {			
 			String name = file.getName();
 			System.out.println(name);
+			File t = new File(path_trees, name);
+			if(t.exists())
+			{
+				System.out.println("exist!");
+				continue;
+			}
 			StringBuilder sb = new StringBuilder(); // bag of words
 			StringBuilder sb2 = new StringBuilder(); // trees
 			String text = "";

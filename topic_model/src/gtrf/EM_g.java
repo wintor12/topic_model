@@ -179,6 +179,18 @@ public class EM_g extends EM{
 		return likelihood;
 	}
 	
+	@Override
+	public double compute_likelihood(Document doc, Model model, int num_words_train) {
+		// TODO Auto-generated method stub
+		double likelihood = super.compute_likelihood(doc, model, num_words_train);
+		
+		likelihood += ((1 - lambda2)/doc.zeta1)*doc.exp_ec - 
+	    		(((doc.zeta1 - doc.zeta2 * lambda2)/(doc.zeta1 * doc.zeta2)) * doc.num_e)*doc.exp_theta_square + 
+	    		Math.log(doc.zeta1) - Math.log(doc.zeta2);
+		
+		return likelihood;
+	}
+	
 	public double lda_inference(Document doc, Model model, int num_words_train)
 	{
 		double likelihood = 0, likelihood_old = 0;
@@ -253,7 +265,7 @@ public class EM_g extends EM{
 	        	doc.gamma[k] = 0;
 	    	}
 	    	
-	    	for(int n = 0; n < doc.length; n++)
+	    	for(int n = 0; n < num_words_train; n++)
 	    	{
 	    		double phisum = 0;
 	    		for(int k = 0; k < model.num_topics; k++)
@@ -283,7 +295,7 @@ public class EM_g extends EM{
 	    		doc.gamma[k] = updataGamma(doc.gamma[k], old_gamma[k], sum_gamma, doc.zeta1, doc.zeta2, doc.num_e, model);
 	    		digamma_gam[k] = Gamma.digamma(doc.gamma[k]);
 	    	}
-	    	likelihood = compute_likelihood(doc, model);
+	    	likelihood = compute_likelihood(doc, model, num_words_train);
 //		    System.out.println("likelihood: " + likelihood);		    
 		    converged = (likelihood_old - likelihood) / likelihood_old;
 //		    System.out.println(converged);

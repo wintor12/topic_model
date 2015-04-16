@@ -730,7 +730,7 @@ public class EM {
 	    		doc.gamma[k] += model.alpha;
 	    		digamma_gam[k] = Gamma.digamma(doc.gamma[k]);
 	    	}
-	    	likelihood = compute_likelihood(doc, model);
+	    	likelihood = compute_likelihood(doc, model, num_words_train);
 //		    System.out.println("likelihood: " + likelihood);		    
 		    converged = (likelihood_old - likelihood) / likelihood_old;
 //		    System.out.println(converged);
