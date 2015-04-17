@@ -40,7 +40,7 @@ public class Test {
 		
 		double alpha = 0.1;
 		double beta = 0.1;
-		int min_count = 50;
+		int min_count = 20;
 		int max_count = 1000;
 		double train_percentage = 0.8;
 		double lambda2 = 0.2;
