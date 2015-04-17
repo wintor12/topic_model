@@ -460,6 +460,71 @@ public class EM {
 		}
 	}
 	
+	public void computePerplexity_e_theta(Model model, int[][] topwords)
+	{
+		System.out.println("========evaluate========");
+		double perplex = 0;
+		int N = 0;
+		StringBuilder sb = new StringBuilder();
+		for(int m = 0; m < corpus.docs_test.length; m++)
+		{
+			Document doc = corpus.docs_test[m];
+			//Initialize gamma and phi to zero for each document
+			corpus.docs_test[m].gamma = new double[model.num_topics];
+			corpus.docs_test[m].phi = new double[corpus.maxLength()][num_topics];
+			lda_inference(doc, model);
+			double[] theta = new double[num_topics];
+			double theta_sum = 0;
+			for(int k = 0; k < num_topics; k++)
+			{
+				theta[k] = doc.gamma[k];
+				theta_sum += theta[k];
+			}
+			for(int k = 0; k < num_topics; k++)
+			{
+				theta[k] = theta[k]/theta_sum;
+			}
+			double log_p_w = 0;
+			for(int n = 0; n < doc.length; n++)
+			{
+				boolean flag = false;
+				for(int k = 0; k < num_topics; k++)
+				{
+					if(topwords[k][doc.ids[n]] == 1)
+					{
+						flag = true;
+						break;
+					}
+				}
+				if(flag == true)
+				{
+					double betaTtheta = 0;
+					for(int k = 0; k < num_topics; k++)
+					{					
+						betaTtheta += Math.exp(model.log_prob_w[k][doc.ids[n]])*theta[k];
+					}
+					log_p_w += doc.counts[n]*Math.log(betaTtheta);
+					N += doc.counts[n];
+				}
+				
+			}
+			perplex += log_p_w;
+		}
+		perplex = Math.exp(-(perplex/N));
+		perplex = Math.floor(perplex);
+		System.out.println(perplex);
+		sb.append("Perplexity: " + perplex);
+		try {
+			File eval = new File(path_res, "eval"); 
+			File all_eval = new File(path, "eval");
+			String s = path_res + " : " + perplex + "\n";
+			FileUtils.writeStringToFile(eval, sb.toString());
+			FileUtils.writeStringToFile(all_eval, s, true);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
 	
 	/**
 	 * Use E step in variational inference to compute the log likelihood of word sequence in test set
