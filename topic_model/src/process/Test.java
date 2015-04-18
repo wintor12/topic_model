@@ -26,8 +26,8 @@ public class Test {
 //    //The stop words folder
 //	public static String stopwords_path = "C:\\Exp\\lda\\stopwords2.txt";
 
-	public static String run_path = "/Users/tongwang/Desktop/exp/lda/nips12/";  
-	public static String data_path = "/Users/tongwang/Desktop/exp/lda/nips12/";
+	public static String run_path = "/Users/tongwang/Desktop/exp/lda/nips2/";  
+	public static String data_path = "/Users/tongwang/Desktop/exp/lda/nips2/";
 	public static String stopwords_path = "/Users/tongwang/Desktop/exp/lda/stopwords2.txt";
 	
 	public static void main(String[] args) {
@@ -44,9 +44,9 @@ public class Test {
 		int max_count = 1000;
 		double train_percentage = 0.8;
 		double lambda2 = 0.2;
-		double lambda4 = 0.8;
+		double lambda4 = 2.0;
 		int K = 2;
-		int[] ks = {10,15,20};
+		int[] ks = {10,15,20,25};
 		//folder path is the running path, path_res is the output result path
 
 //		for(int i = 0; i < ks.length; i++){
@@ -65,10 +65,10 @@ public class Test {
 		
 				
 		for(int i = 0; i < ks.length; i++){
-			Corpus corpus2 = new Corpus(run_path, min_count, max_count, train_percentage, "GTRF");
-			String path_res2 = new File(run_path, "res_" + ks[i] + "_" + lambda2).getAbsolutePath();
-			EM_g em2 = new EM_g(run_path, path_res2, ks[i], corpus2, beta, lambda2);
-			em2.run_em("GTRF");	
+//			Corpus corpus2 = new Corpus(run_path, min_count, max_count, train_percentage, "GTRF");
+//			String path_res2 = new File(run_path, "res_" + ks[i] + "_" + lambda2).getAbsolutePath();
+//			EM_g em2 = new EM_g(run_path, path_res2, ks[i], corpus2, beta, lambda2);
+//			em2.run_em("GTRF");	
 			
 			Corpus corpus3 = new Corpus(run_path, min_count, max_count, train_percentage, "MGTRF");
 			String path_res3 = new File(run_path, "res_" + ks[i] + "_" + lambda2 + "_" + lambda4).getAbsolutePath();
