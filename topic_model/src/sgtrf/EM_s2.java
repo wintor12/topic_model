@@ -61,7 +61,7 @@ public class EM_s2 extends EM{
 	    				List<Integer> list = doc.adj.get(doc.ids[n]);
 		    			for(int adj_id = 0; adj_id < list.size(); adj_id++)
 		    			{
-		    				double similarity = sim[doc.ids[n]][list.get(adj_id)];
+		    				double similarity = (sim[doc.ids[n]][list.get(adj_id)] + 1)/2.0;
 
 		    				sumadj[n][k] += oldphi[doc.idToIndex.get(list.get(adj_id))][k]*similarity;
 							exp_ec += oldphi[n][k] * oldphi[doc.idToIndex.get(list.get(adj_id))][k]*similarity;
@@ -223,7 +223,7 @@ public class EM_s2 extends EM{
 	    				List<Integer> list = doc.adj.get(doc.ids[n]);
 		    			for(int adj_id = 0; adj_id < list.size(); adj_id++)
 		    			{
-		    				double similarity = sim[doc.ids[n]][list.get(adj_id)];
+		    				double similarity = (sim[doc.ids[n]][list.get(adj_id)] + 1)/2.0;
 
 		    				sumadj[n][k] += oldphi[doc.idToIndex.get(list.get(adj_id))][k]*similarity;
 							exp_ec += oldphi[n][k] * oldphi[doc.idToIndex.get(list.get(adj_id))][k]*similarity;
